@@ -16,7 +16,7 @@ import (
 var ErrNotReady = errors.New("database or schema is not ready")
 
 type Store struct {
-	pool *pgxpool.Pool
+	pool         *pgxpool.Pool
 	readyTimeout time.Duration
 }
 

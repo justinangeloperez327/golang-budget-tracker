@@ -10,13 +10,13 @@ import (
 )
 
 type Database struct {
-	URL                string
-	MinConns           int32
-	MaxConns           int32
-	ConnectTimeout     time.Duration
-	ReadyTimeout       time.Duration
-	MaxConnLifetime    time.Duration
-	MaxConnIdleTime    time.Duration
+	URL             string
+	MinConns        int32
+	MaxConns        int32
+	ConnectTimeout  time.Duration
+	ReadyTimeout    time.Duration
+	MaxConnLifetime time.Duration
+	MaxConnIdleTime time.Duration
 }
 
 func loadDatabase(appEnv string) (Database, error) {
@@ -62,7 +62,7 @@ func loadDatabase(appEnv string) (Database, error) {
 	db.MaxConns = int32(max)
 	durations := []struct {
 		name, fallback string
-		target *time.Duration
+		target         *time.Duration
 	}{
 		{"DB_CONNECT_TIMEOUT", "5s", &db.ConnectTimeout},
 		{"DB_READY_TIMEOUT", "2s", &db.ReadyTimeout},

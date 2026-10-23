@@ -99,3 +99,13 @@ func TestTransactionCommitAndRollback(t *testing.T) {
 		t.Fatalf("transaction commit value = %q, err = %v", value, err)
 	}
 }
+
+func TestReadinessBeforeMigrations(t *testing.T) {
+	if os.Getenv("TEST_MIGRATIONS_DOWN") != "1" {
+		t.Skip("only run after dedicated CI Goose down step")
+	}
+	store := openDB(t)
+	if err := store.Ready(context.Background()); !errors.Is(err, database.ErrNotReady) {
+		t.Fatalf("expected unready without schema marker, got %v", err)
+	}
+}

@@ -20,8 +20,8 @@ func testHandler(logs *bytes.Buffer) http.Handler {
 	logger := slog.New(slog.NewJSONHandler(logs, nil))
 	return NewHandler(logger, config.Config{
 		RequestTimeout: 2 * time.Second,
-		MaxBodyBytes: 128,
-		Database: config.Database{ReadyTimeout: time.Second},
+		MaxBodyBytes:   128,
+		Database:       config.Database{ReadyTimeout: time.Second},
 	}, func(context.Context) error { return nil })
 }
 
@@ -63,12 +63,12 @@ func TestHealthAndReadiness(t *testing.T) {
 func TestReadinessUnavailable(t *testing.T) {
 	cfg := config.Config{
 		RequestTimeout: time.Second,
-		MaxBodyBytes: 128,
-		Database: config.Database{ReadyTimeout: 100 * time.Millisecond},
+		MaxBodyBytes:   128,
+		Database:       config.Database{ReadyTimeout: 100 * time.Millisecond},
 	}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, nil))
 	for _, tc := range []struct {
-		name string
+		name  string
 		check ReadyCheck
 	}{
 		{"no checker", nil},

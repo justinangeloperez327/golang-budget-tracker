@@ -20,7 +20,7 @@ func TestUninitializedStoreIsNotReady(t *testing.T) {
 }
 
 func TestOpenRejectsInvalidConnectionConfiguration(t *testing.T) {
-	_, err := Open(context.Background(), config.Database{URL:"not-a-postgres-url"})
+	_, err := Open(context.Background(), config.Database{URL: "not-a-postgres-url"})
 	if err == nil {
 		t.Fatal("invalid PostgreSQL URL should fail")
 	}

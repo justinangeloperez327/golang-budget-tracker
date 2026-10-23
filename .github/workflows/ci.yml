@@ -29,18 +29,8 @@ jobs:
           cache: false
       - name: Toolchain
         run: go version
-      - name: Resolve pinned dependencies
-        run: go mod tidy
-      - name: Inspect resolved modules (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          echo "::group::Resolved go.mod"
-          cat go.mod
-          echo "::endgroup::"
-          echo "::group::Resolved go.sum"
-          cat go.sum
-          echo "::endgroup::"
+      - name: Ensure committed Go modules are tidy
+        run: go mod tidy -diff
       - name: Verify downloaded dependencies
         run: go mod verify
       - name: Vet
@@ -71,15 +61,11 @@ jobs:
           echo '497ae4fcdfa64c5b0c311ffe4c2bd991e43991e82e5367792ed78bc2dca27354  /tmp/sqlc.tar.gz' | sha256sum -c -
           tar -xzf /tmp/sqlc.tar.gz -C /tmp
           /tmp/sqlc version
-      - name: Regenerate SQL code and inspect diff
+      - name: Verify committed sqlc generated source
         shell: bash
         run: |
           /tmp/sqlc generate
-          git diff -- internal/platform/database/sqlc
-          echo "::group::Generated sqlc files"
-          find internal/platform/database/sqlc -type f | sort
-          for f in internal/platform/database/sqlc/*.go; do echo "-- $f"; cat "$f"; done
-          echo "::endgroup::"
+          git diff --exit-code -- internal/platform/database/sqlc
           test -z "$(git status --porcelain -- internal/platform/database/sqlc)"
 
   database-integration:
@@ -107,8 +93,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Resolve Go dependencies
-        run: go mod tidy
+      - name: Verify committed Go module definitions
+        run: go mod tidy -diff
       - name: Install pinned Goose
         run: go install github.com/pressly/goose/v3/cmd/goose@v3.29.0
       - name: Apply migrations
@@ -122,6 +108,35 @@ jobs:
         shell: bash
         run: |
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" down
+          go test -tags=integration -count=1 -run '^TestReadinessBeforeMigrations
+
+  node:
+    name: Node 24 tooling
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run check:node
+      - run: npm test
+      - run: npm run assets:build
+      - run: test -s web/assets/app.css
+
+  container:
+    name: Docker and Compose validation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate Compose
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+      - name: Build Docker image
+        run: docker build --tag golang-budget-tracker:ci .
+ ./tests/integration
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" up
           go test -tags=integration -count=1 ./tests/integration
 
