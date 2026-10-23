@@ -4,6 +4,7 @@ package integration
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -29,6 +30,10 @@ type authReply struct {
 func authRequest(t *testing.T, handler http.Handler, method, path, body string, cookie *http.Cookie, csrf, origin string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	// Test-local loopback identity prevents independent integration tests from
+	// consuming one another's persistent 15-minute registration rate limits.
+	hash := sha256.Sum256([]byte(t.Name()))
+	req.RemoteAddr = fmt.Sprintf("127.10.%d.%d:12345", hash[0], hash[1])
 	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}

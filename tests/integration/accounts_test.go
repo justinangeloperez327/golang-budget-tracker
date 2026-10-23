@@ -30,7 +30,9 @@ func TestAccountBrowserWorkflowAndOwnership(t *testing.T) {
 	}
 
 	key, err := accounts.NewSetupKey()
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	form := url.Values{
 		"name": {"UAE Bank <script>alert(1)</script>"},
 		"kind": {"bank"}, "currency": {"AED"},
@@ -42,7 +44,9 @@ func TestAccountBrowserWorkflowAndOwnership(t *testing.T) {
 		t.Fatalf("missing Origin: %d", rec.Code)
 	}
 	missingCSRF := url.Values{}
-	for k, v := range form { missingCSRF[k] = append([]string{}, v...) }
+	for k, v := range form {
+		missingCSRF[k] = append([]string{}, v...)
+	}
 	missingCSRF.Set("csrf_token", "bad")
 	if rec := formRequest(handler, "POST", "/accounts", missingCSRF, aliceCookie, false, origin); rec.Code != http.StatusForbidden {
 		t.Fatalf("invalid csrf: %d", rec.Code)
@@ -73,7 +77,9 @@ func TestAccountBrowserWorkflowAndOwnership(t *testing.T) {
 	}
 
 	pesoKey, err := accounts.NewSetupKey()
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	pesoForm := url.Values{
 		"name": {"Philippine credit card"}, "kind": {"credit"},
 		"currency": {"PHP"}, "opening": {"2000.00"},
@@ -100,17 +106,19 @@ func TestAccountBrowserWorkflowAndOwnership(t *testing.T) {
 		SELECT a.id,a.currency,o.amount_minor FROM accounts a
 		JOIN account_openings o ON o.account_id=a.id
 		WHERE a.workspace_id=$1 AND a.name LIKE 'UAE Bank%'`, alice.WorkspaceID).
-		Scan(&firstID,&firstCurrency,&amount);err != nil {
+		Scan(&firstID, &firstCurrency, &amount); err != nil {
 		t.Fatal(err)
 	}
 	if firstCurrency != "AED" || amount != 123456 {
 		t.Fatalf("opening mismatch: %s %d", firstCurrency, amount)
 	}
 	var total int
-	if err:=db.Pool().QueryRow(ctx,`SELECT COUNT(*) FROM accounts WHERE workspace_id=$1`,alice.WorkspaceID).Scan(&total);err!=nil {
+	if err := db.Pool().QueryRow(ctx, `SELECT COUNT(*) FROM accounts WHERE workspace_id=$1`, alice.WorkspaceID).Scan(&total); err != nil {
 		t.Fatal(err)
 	}
-	if total != 2 {t.Fatalf("duplicate or invalid account was persisted: %d",total)}
+	if total != 2 {
+		t.Fatalf("duplicate or invalid account was persisted: %d", total)
+	}
 
 	foreignArchive := formRequest(handler, "POST", "/accounts/"+firstID+"/archive",
 		url.Values{"csrf_token": {alice.CSRFToken}}, bobCookie, false, origin)
@@ -138,12 +146,12 @@ func TestAccountBrowserWorkflowAndOwnership(t *testing.T) {
 		t.Fatal("archived account missing or PHP liability lost")
 	}
 	// The database enforces immutable opening records even against direct SQL updates.
-	if _,err := db.Pool().Exec(ctx,
-		`UPDATE account_openings SET amount_minor=1 WHERE account_id=$1`,firstID);err==nil {
+	if _, err := db.Pool().Exec(ctx,
+		`UPDATE account_openings SET amount_minor=1 WHERE account_id=$1`, firstID); err == nil {
 		t.Fatal("opening amount must be immutable at DB level")
 	}
-	if err:=db.Pool().QueryRow(ctx,`SELECT amount_minor FROM account_openings WHERE account_id=$1`,firstID).Scan(&amount);err!=nil||amount!=123456 {
-		t.Fatalf("opening changed unexpectedly: %d, %v",amount,err)
+	if err := db.Pool().QueryRow(ctx, `SELECT amount_minor FROM account_openings WHERE account_id=$1`, firstID).Scan(&amount); err != nil || amount != 123456 {
+		t.Fatalf("opening changed unexpectedly: %d, %v", amount, err)
 	}
 }
 
@@ -152,8 +160,7 @@ func TestAccountsStoreRejectsCrossWorkspaceArchive(t *testing.T) {
 	// PostgreSQL's workspace predicate prevents cross-owner updates even if an ID is guessed.
 	db := openDB(t)
 	store := accounts.NewStore(db.Pool())
-	if err := store.Archive(context.Background(), "00000000000000000000000000000000", "11111111111111111111111111111111");
-		err != accounts.ErrNotFound {
-		t.Fatalf("unexpected archive result: %v",err)
+	if err := store.Archive(context.Background(), "00000000000000000000000000000000", "11111111111111111111111111111111"); err != accounts.ErrNotFound {
+		t.Fatalf("unexpected archive result: %v", err)
 	}
 }

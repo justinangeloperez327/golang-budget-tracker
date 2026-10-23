@@ -40,7 +40,9 @@ func registerAccountsUI(r chi.Router, identity *auth.Store, cfg config.Auth, log
 	store := accounts.NewStore(identity.DB)
 	show := func(w http.ResponseWriter, req *http.Request, message string, status int) {
 		actor, ok := currentActor(w, req, identity, cfg)
-		if !ok { return }
+		if !ok {
+			return
+		}
 		items, err := store.List(req.Context(), actor.WorkspaceID)
 		if err != nil {
 			logger.Error("accounts_list_unavailable", "type", "database")
@@ -59,7 +61,9 @@ func registerAccountsUI(r chi.Router, identity *auth.Store, cfg config.Auth, log
 	})
 	r.Get("/accounts/rows", func(w http.ResponseWriter, req *http.Request) {
 		actor, ok := currentActor(w, req, identity, cfg)
-		if !ok { return }
+		if !ok {
+			return
+		}
 		items, err := store.List(req.Context(), actor.WorkspaceID)
 		if err != nil {
 			http.Error(w, "Accounts temporarily unavailable", http.StatusServiceUnavailable)
@@ -69,13 +73,17 @@ func registerAccountsUI(r chi.Router, identity *auth.Store, cfg config.Auth, log
 	})
 	r.Post("/accounts", func(w http.ResponseWriter, req *http.Request) {
 		actor, ok := currentActor(w, req, identity, cfg)
-		if !ok { return }
-		if !accountFormAuthorized(w, req, actor, cfg) { return }
+		if !ok {
+			return
+		}
+		if !accountFormAuthorized(w, req, actor, cfg) {
+			return
+		}
 		input := accounts.CreateInput{
-			Name: req.PostFormValue("name"),
-			Kind: req.PostFormValue("kind"),
+			Name:     req.PostFormValue("name"),
+			Kind:     req.PostFormValue("kind"),
 			Currency: req.PostFormValue("currency"),
-			Opening: req.PostFormValue("opening"),
+			Opening:  req.PostFormValue("opening"),
 			SetupKey: req.PostFormValue("setup_key"),
 		}
 		_, err := store.Create(req.Context(), actor.WorkspaceID, input)
@@ -106,8 +114,12 @@ func registerAccountsUI(r chi.Router, identity *auth.Store, cfg config.Auth, log
 	})
 	r.Post("/accounts/{id}/archive", func(w http.ResponseWriter, req *http.Request) {
 		actor, ok := currentActor(w, req, identity, cfg)
-		if !ok { return }
-		if !accountFormAuthorized(w, req, actor, cfg) { return }
+		if !ok {
+			return
+		}
+		if !accountFormAuthorized(w, req, actor, cfg) {
+			return
+		}
 		err := store.Archive(req.Context(), actor.WorkspaceID, chi.URLParam(req, "id"))
 		if err != nil {
 			if errors.Is(err, accounts.ErrNotFound) {
