@@ -10,13 +10,13 @@ import (
 )
 
 type Config struct {
-	AppEnv string
+	AppEnv   string
 	HTTPAddr string
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		AppEnv: envOr("APP_ENV", "development"),
+		AppEnv:   envOr("APP_ENV", "development"),
 		HTTPAddr: envOr("HTTP_ADDR", ":8080"),
 	}
 	if cfg.AppEnv != "development" && cfg.AppEnv != "test" && cfg.AppEnv != "production" {

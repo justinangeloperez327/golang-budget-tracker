@@ -30,12 +30,12 @@ func run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	server := &http.Server{
-		Addr: cfg.HTTPAddr,
-		Handler: app.NewHandler(),
+		Addr:              cfg.HTTPAddr,
+		Handler:           app.NewHandler(),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout: 15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout: 60 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

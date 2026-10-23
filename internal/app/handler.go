@@ -14,7 +14,7 @@ func NewHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
 		_ = json.NewEncoder(w).Encode(map[string]string{
-			"status": "ok",
+			"status":  "ok",
 			"service": "golang-budget-tracker",
 		})
 	})
