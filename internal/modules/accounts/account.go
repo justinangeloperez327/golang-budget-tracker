@@ -36,7 +36,7 @@ type Account struct {
 	Kind         string
 	Currency     string
 	OpeningMinor int64
-	LedgerMinor int64
+	LedgerMinor  int64
 	Archived     bool
 	CreatedAt    time.Time
 }
@@ -144,15 +144,17 @@ func Validate(in CreateInput) (CreateInput, int64, error) {
 }
 
 func FormatSignedMinor(n int64) string {
-	if n >= 0 { return FormatMinor(n) }
+	if n >= 0 {
+		return FormatMinor(n)
+	}
 	// Use unsigned two's-complement magnitude to handle MinInt64 safely.
-	magnitude := uint64(-(n+1)) + 1
+	magnitude := uint64(-(n + 1)) + 1
 	whole := strconv.FormatUint(magnitude/100, 10)
 	var chunks []string
-	for len(whole)>3 {
-		chunks=append([]string{whole[len(whole)-3:]},chunks...)
-		whole=whole[:len(whole)-3]
+	for len(whole) > 3 {
+		chunks = append([]string{whole[len(whole)-3:]}, chunks...)
+		whole = whole[:len(whole)-3]
 	}
-	chunks=append([]string{whole},chunks...)
-	return fmt.Sprintf("-%s.%02d",strings.Join(chunks,","),magnitude%100)
+	chunks = append([]string{whole}, chunks...)
+	return fmt.Sprintf("-%s.%02d", strings.Join(chunks, ","), magnitude%100)
 }

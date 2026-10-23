@@ -16,43 +16,47 @@ import (
 // authorized, domain-validated mutation APIs for expenses and transfers.
 func registerLedgerAPI(r chi.Router, identity *auth.Store, cfg config.Auth) {
 	s := ledger.NewStore(identity.DB)
-	r.Route("/api/v1/ledger",func(api chi.Router){
-		check:=func(w http.ResponseWriter, req *http.Request)(auth.Actor,bool){
-			cookie,err:=req.Cookie(auth.CookieName(cfg))
-			if err!=nil {
-				httpx.WriteError(w,req,http.StatusUnauthorized,"unauthenticated","Sign in required")
-				return auth.Actor{},false
+	r.Route("/api/v1/ledger", func(api chi.Router) {
+		check := func(w http.ResponseWriter, req *http.Request) (auth.Actor, bool) {
+			cookie, err := req.Cookie(auth.CookieName(cfg))
+			if err != nil {
+				httpx.WriteError(w, req, http.StatusUnauthorized, "unauthenticated", "Sign in required")
+				return auth.Actor{}, false
 			}
-			actor,err:=identity.Authenticate(req.Context(),cookie.Value)
-			if err!=nil{
-				if errors.Is(err,auth.ErrUnauthenticated){
-					httpx.WriteError(w,req,http.StatusUnauthorized,"unauthenticated","Sign in required")
-				}else{
-					httpx.WriteError(w,req,http.StatusServiceUnavailable,"temporarily_unavailable","Please retry later")
+			actor, err := identity.Authenticate(req.Context(), cookie.Value)
+			if err != nil {
+				if errors.Is(err, auth.ErrUnauthenticated) {
+					httpx.WriteError(w, req, http.StatusUnauthorized, "unauthenticated", "Sign in required")
+				} else {
+					httpx.WriteError(w, req, http.StatusServiceUnavailable, "temporarily_unavailable", "Please retry later")
 				}
-				return auth.Actor{},false
+				return auth.Actor{}, false
 			}
-			return actor,true
+			return actor, true
 		}
-		api.Get("/balances",func(w http.ResponseWriter,req *http.Request){
-			actor,ok:=check(w,req)
-			if !ok{return}
-			balances,err:=s.Balances(req.Context(),actor.WorkspaceID)
-			if err!=nil {
-				httpx.WriteError(w,req,http.StatusServiceUnavailable,"temporarily_unavailable","Please retry later")
+		api.Get("/balances", func(w http.ResponseWriter, req *http.Request) {
+			actor, ok := check(w, req)
+			if !ok {
 				return
 			}
-			writeLedgerJSON(w,map[string]any{"balances":balances})
+			balances, err := s.Balances(req.Context(), actor.WorkspaceID)
+			if err != nil {
+				httpx.WriteError(w, req, http.StatusServiceUnavailable, "temporarily_unavailable", "Please retry later")
+				return
+			}
+			writeLedgerJSON(w, map[string]any{"balances": balances})
 		})
-		api.Get("/journals",func(w http.ResponseWriter,req *http.Request){
-			actor,ok:=check(w,req)
-			if !ok{return}
-			history,err:=s.Recent(req.Context(),actor.WorkspaceID,50)
-			if err!=nil{
-				httpx.WriteError(w,req,http.StatusServiceUnavailable,"temporarily_unavailable","Please retry later")
+		api.Get("/journals", func(w http.ResponseWriter, req *http.Request) {
+			actor, ok := check(w, req)
+			if !ok {
 				return
 			}
-			writeLedgerJSON(w,map[string]any{"journals":history})
+			history, err := s.Recent(req.Context(), actor.WorkspaceID, 50)
+			if err != nil {
+				httpx.WriteError(w, req, http.StatusServiceUnavailable, "temporarily_unavailable", "Please retry later")
+				return
+			}
+			writeLedgerJSON(w, map[string]any{"journals": history})
 		})
 	})
 }
