@@ -1,55 +1,65 @@
 # Golang Budget Tracker
 
-A Go-first personal finance tracker planned around **Go 1.27.3 + templ + HTMX + Tailwind CSS + PostgreSQL**. The 20-group roadmap is described in [docs/roadmap.md](docs/roadmap.md).
+Go-first personal finance application following a [20-group roadmap](docs/roadmap.md): **Go 1.27.3 + Chi + templ + HTMX + Tailwind CSS + PostgreSQL**.
 
-**Current delivery: Group 1 repository bootstrap only.** The API, ledger, login, budget manager, database integration, and production UI are not yet implemented. The initial HTTP server uses the Go standard library; Chi will be integrated in Group 2, PostgreSQL/sqlc/Goose in Group 3, and templ/HTMX/Tailwind in Group 5.
+**Current delivery: Group 2 — HTTP infrastructure.** Chi routing, structured logging, configuration validation, request IDs, response errors, limits and graceful shutdown are implemented and tested. The ledger, database, authentication and templ/HTMX UI are **not** yet implemented.
 
 ## Prerequisites
 
-- [Go 1.27.3](https://go.dev/dl/)
-- Node.js 24 + npm (build/test tooling only)
-- Docker with Compose (for local PostgreSQL)
-- Optional: GNU Make
+- Go **1.27.3**
+- Node.js **24** + npm (asset/test tooling only)
+- Docker + Compose (optional until database connectivity in Group 3)
+- GNU Make (optional)
 
-## Run locally
+## Quick start
 
 1. Clone the repository.
-2. Copy `.env.example` to `.env` (PowerShell: `Copy-Item .env.example .env`).
-3. Replace development-only PostgreSQL credentials before using any shared environment.
-4. Start PostgreSQL with `docker compose up -d db`.
-5. Start the HTTP skeleton with `go run ./cmd/server`.
-6. Open `http://localhost:8080/` or `http://localhost:8080/healthz`.
+2. Optionally copy `.env.example` to `.env` for local Compose credentials; PowerShell: `Copy-Item .env.example .env`.
+3. Run `go run ./cmd/server` (listens at `:8080` by default).
+4. Open `http://localhost:8080/` or `http://localhost:8080/healthz`.
 
-The Group 1 Go server reads `APP_ENV` and `HTTP_ADDR` from process environment (not directly from the `.env` file). Their defaults are `development` and `:8080`. Docker Compose loads `.env` itself. The server does not connect to PostgreSQL until Group 3.
+The Go program reads **process environment**, not the `.env` file. Example: `HTTP_ADDR=127.0.0.1:8081 go run ./cmd/server` on Linux; PowerShell: `$env:HTTP_ADDR='127.0.0.1:8081'; go run ./cmd/server`.
 
-## Verify
+Endpoints:
+
+| Path | Purpose |
+| --- | --- |
+| `GET /` | bootstrap HTML page |
+| `GET /healthz` | liveness check |
+| `GET /readyz` | HTTP process readiness (not database readiness yet) |
+| `GET /api/v1/status` | versioned status payload |
+
+Routes return `X-Request-ID` response headers. Errors use JSON with `error.code`, `error.message` and `error.request_id`. See [Group 2 HTTP notes](docs/group-02-http.md) for security/timeout limitations and environment settings.
+
+## Local verification
 
 ```sh
+go mod verify
+go mod tidy -diff
+go vet ./...
 go test ./...
 go test -race ./...
-go vet ./...
 go build ./cmd/server
 npm ci --ignore-scripts
 npm run check:node
 npm test
 npm run assets:build
 docker compose config --quiet
-docker build --tag golang-budget-tracker:local .
+docker build -t golang-budget-tracker:local .
 ```
 
-There are no external Go or npm dependencies in Group 1, so `go.sum` is not required. Node's lockfile is committed. The `assets:build` script copies an initial CSS placeholder; Tailwind tooling and templ code generation are introduced in Group 5.
+Run `docker compose up -d db` after copying `.env.example` to `.env` if you want a local PostgreSQL container; the Go app does **not connect** to it yet. Group 3 introduces pgx, sqlc and Goose.
 
-## Structure
+## Architecture
 
-- `cmd/server`: Go entrypoint.
-- `internal/app` and `internal/config`: bootstrap HTTP and environment validation.
-- `internal/modules`: future financial domains.
-- `internal/platform`: future persistence/security adapters.
-- `internal/views`: future templ components.
-- `db/migrations` and `db/queries`: future Goose/sqlc definitions.
-- `web/styles`, `web/assets`, `scripts`: Node 24 asset tooling foundation.
-- `tests`: future PostgreSQL integration and Playwright browser tests.
+- `cmd/server/`: entrypoint, signal-aware HTTP server lifecycle
+- `internal/app/`: Chi router, middleware and health routes
+- `internal/config/`: process config and validation
+- `internal/httpx/`: structured HTTP error envelopes
+- `internal/modules/`: future financial domains
+- `internal/platform/`: future infrastructure adapters
+- `internal/views/`: templ UI coming in Group 5
+- `db/`: future SQL migrations and generated queries
+- `web/`: Node 24 asset tooling and upcoming frontend
 
-## Continuous integration
-
-GitHub Actions validates Go on pinned Ubuntu and Windows runners, tests Node 24 scripts and validates the Docker build and Compose configuration. Official action versions use Node 24 internally. CI has read-only repository permissions and **does not publish or deploy automatically**. Manual production deployment is a future group.
+CI checks Go on Ubuntu and Windows, Node 24, and Docker/Compose. **No PR, automatic release, image publishing or deployment** is configured.

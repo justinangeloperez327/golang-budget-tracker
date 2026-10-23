@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,39 +28,58 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configuration: %w", err)
 	}
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           app.NewHandler(),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      15 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		Handler:           app.NewHandler(logger, cfg),
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+		ReadTimeout:       cfg.ReadTimeout,
+		WriteTimeout:      cfg.WriteTimeout,
+		IdleTimeout:       cfg.IdleTimeout,
+		MaxHeaderBytes:    cfg.MaxHeaderBytes,
+		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
+	listener, err := net.Listen("tcp", cfg.HTTPAddr)
+	if err != nil {
+		return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)
+	}
+	defer listener.Close()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	errs := make(chan error, 1)
+	logger.Info("HTTP server starting", "addr", listener.Addr().String(), "env", cfg.AppEnv)
+	if err := serve(ctx, server, listener, cfg.ShutdownTimeout); err != nil {
+		return err
+	}
+	logger.Info("HTTP server stopped")
+	return nil
+}
+
+// serve exits on listener errors or gracefully shuts down on context cancellation.
+// Shutdown uses a new bounded context so a canceled signal context cannot abort it.
+func serve(ctx context.Context, server *http.Server, listener net.Listener, timeout time.Duration) error {
+	done := make(chan error, 1)
 	go func() {
-		logger.Info("HTTP server starting", "addr", cfg.HTTPAddr, "env", cfg.AppEnv)
-		errs <- server.ListenAndServe()
+		done <- server.Serve(listener)
 	}()
 
 	select {
-	case err := <-errs:
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
+	case err := <-done:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("serve HTTP: %w", err)
 		}
-		return fmt.Errorf("listen and serve: %w", err)
+		return nil
 	case <-ctx.Done():
 	}
 
-	ctxShutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	if err := server.Shutdown(ctxShutdown); err != nil {
-		return fmt.Errorf("HTTP shutdown: %w", err)
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		_ = server.Close()
+		return fmt.Errorf("shutdown HTTP: %w", err)
 	}
-	logger.Info("HTTP server stopped")
+	if err := <-done; err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("serve HTTP during shutdown: %w", err)
+	}
 	return nil
 }

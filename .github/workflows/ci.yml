@@ -29,6 +29,10 @@ jobs:
           cache: false
       - name: Toolchain
         run: go version
+      - name: Go dependency verification
+        run: go mod verify
+      - name: Ensure tidy module
+        run: go mod tidy -diff
       - name: Vet
         run: go vet ./...
       - name: Test
