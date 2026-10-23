@@ -2,7 +2,9 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -16,7 +18,11 @@ import (
 
 func testHandler(logs *bytes.Buffer) http.Handler {
 	logger := slog.New(slog.NewJSONHandler(logs, nil))
-	return NewHandler(logger, config.Config{RequestTimeout: 2 * time.Second, MaxBodyBytes: 128})
+	return NewHandler(logger, config.Config{
+		RequestTimeout: 2 * time.Second,
+		MaxBodyBytes: 128,
+		Database: config.Database{ReadyTimeout: time.Second},
+	}, func(context.Context) error { return nil })
 }
 
 func TestHealthAndReadiness(t *testing.T) {
@@ -49,6 +55,33 @@ func TestHealthAndReadiness(t *testing.T) {
 			}
 			if !strings.Contains(logs.String(), "http_request") {
 				t.Fatal("expected structured access log")
+			}
+		})
+	}
+}
+
+func TestReadinessUnavailable(t *testing.T) {
+	cfg := config.Config{
+		RequestTimeout: time.Second,
+		MaxBodyBytes: 128,
+		Database: config.Database{ReadyTimeout: 100 * time.Millisecond},
+	}
+	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, nil))
+	for _, tc := range []struct {
+		name string
+		check ReadyCheck
+	}{
+		{"no checker", nil},
+		{"database not ready", func(context.Context) error { return errors.New("password=secret must not appear") }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			NewHandler(logger, cfg, tc.check).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+			if rec.Code != http.StatusServiceUnavailable {
+				t.Fatalf("expected 503, got %d", rec.Code)
+			}
+			if !strings.Contains(rec.Body.String(), "not_ready") || strings.Contains(rec.Body.String(), "secret") {
+				t.Fatalf("unexpected response: %s", rec.Body.String())
 			}
 		})
 	}

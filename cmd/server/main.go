@@ -14,6 +14,7 @@ import (
 
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/app"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/config"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/platform/database"
 )
 
 func main() {
@@ -29,9 +30,18 @@ func run() error {
 		return fmt.Errorf("configuration: %w", err)
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+
+	bootCtx, cancel := context.WithTimeout(context.Background(), cfg.Database.ConnectTimeout)
+	defer cancel()
+	store, err := database.Open(bootCtx, cfg.Database)
+	if err != nil {
+		return fmt.Errorf("database initialization: %w", err)
+	}
+	defer store.Close()
+
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           app.NewHandler(logger, cfg),
+		Handler:           app.NewHandler(logger, cfg, store.Ready),
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 		ReadTimeout:       cfg.ReadTimeout,
 		WriteTimeout:      cfg.WriteTimeout,
@@ -55,14 +65,11 @@ func run() error {
 	return nil
 }
 
-// serve exits on listener errors or gracefully shuts down on context cancellation.
-// Shutdown uses a new bounded context so a canceled signal context cannot abort it.
 func serve(ctx context.Context, server *http.Server, listener net.Listener, timeout time.Duration) error {
 	done := make(chan error, 1)
 	go func() {
 		done <- server.Serve(listener)
 	}()
-
 	select {
 	case err := <-done:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {

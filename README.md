@@ -1,37 +1,30 @@
 # Golang Budget Tracker
 
-Go-first personal finance application following a [20-group roadmap](docs/roadmap.md): **Go 1.27.3 + Chi + templ + HTMX + Tailwind CSS + PostgreSQL**.
+A Go-first personal finance tracker built incrementally using **Go 1.27.3**, Chi, **templ + HTMX**, Tailwind and PostgreSQL. The [finalized 20-group roadmap](docs/roadmap.md) defines the feature sequence.
 
-**Current delivery: Group 2 — HTTP infrastructure.** Chi routing, structured logging, configuration validation, request IDs, response errors, limits and graceful shutdown are implemented and tested. The ledger, database, authentication and templ/HTMX UI are **not** yet implemented.
+**Current scope: Group 3 — PostgreSQL infrastructure.** The app now uses a pgx connection pool, explicit Goose migrations, sqlc-generated queries, transaction boundaries and database-backed readiness. No user accounts, budgets, financial ledger or templ/HTMX pages exist yet.
 
-## Prerequisites
+## Requirements
 
-- Go **1.27.3**
-- Node.js **24** + npm (asset/test tooling only)
-- Docker + Compose (optional until database connectivity in Group 3)
-- GNU Make (optional)
+- Go 1.27.3
+- Docker and Compose (PostgreSQL 17)
+- Node.js 24 (asset tooling only)
+- GNU Make optional (PowerShell alternatives below)
 
-## Quick start
+## Local setup
 
-1. Clone the repository.
-2. Optionally copy `.env.example` to `.env` for local Compose credentials; PowerShell: `Copy-Item .env.example .env`.
-3. Run `go run ./cmd/server` (listens at `:8080` by default).
-4. Open `http://localhost:8080/` or `http://localhost:8080/healthz`.
+1. Clone the repository and copy `.env.example` to `.env` (PowerShell: `Copy-Item .env.example .env`).
+2. Start PostgreSQL: `docker compose up -d db`.
+3. Export `DATABASE_URL` as a **process environment variable**, matching your Docker Compose password. On Linux/macOS: `export DATABASE_URL='postgres://budget_tracker_dev:local_dev_only_change_me@127.0.0.1:5432/budget_tracker?sslmode=disable'`. On PowerShell: `$env:DATABASE_URL='postgres://budget_tracker_dev:local_dev_only_change_me@127.0.0.1:5432/budget_tracker?sslmode=disable'`.
+4. Apply migrations manually: `go run github.com/pressly/goose/v3/cmd/goose@v3.29.0 -dir db/migrations postgres "$DATABASE_URL" up`. PowerShell: use `$env:DATABASE_URL` rather than `$DATABASE_URL`.
+5. Start the application: `go run ./cmd/server`.
+6. Check `http://localhost:8080/healthz` and `http://localhost:8080/readyz`.
 
-The Go program reads **process environment**, not the `.env` file. Example: `HTTP_ADDR=127.0.0.1:8081 go run ./cmd/server` on Linux; PowerShell: `$env:HTTP_ADDR='127.0.0.1:8081'; go run ./cmd/server`.
+The Go process **does not load .env automatically**. Compose reads `.env`; application settings must be provided to the Go process separately. The server now requires `DATABASE_URL` and fails to start when PostgreSQL is inaccessible. `/healthz` checks the HTTP process, while `/readyz` checks connectivity and a migrated schema marker; it returns HTTP 503 before migration or during database failure.
 
-Endpoints:
+The application does not auto-migrate or create application tables at startup. For production, use a protected migration workflow with a migration-capable account, and a separate least-privileged application database user.
 
-| Path | Purpose |
-| --- | --- |
-| `GET /` | bootstrap HTML page |
-| `GET /healthz` | liveness check |
-| `GET /readyz` | HTTP process readiness (not database readiness yet) |
-| `GET /api/v1/status` | versioned status payload |
-
-Routes return `X-Request-ID` response headers. Errors use JSON with `error.code`, `error.message` and `error.request_id`. See [Group 2 HTTP notes](docs/group-02-http.md) for security/timeout limitations and environment settings.
-
-## Local verification
+## Tooling / verification
 
 ```sh
 go mod verify
@@ -40,6 +33,7 @@ go vet ./...
 go test ./...
 go test -race ./...
 go build ./cmd/server
+go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate
 npm ci --ignore-scripts
 npm run check:node
 npm test
@@ -48,18 +42,13 @@ docker compose config --quiet
 docker build -t golang-budget-tracker:local .
 ```
 
-Run `docker compose up -d db` after copying `.env.example` to `.env` if you want a local PostgreSQL container; the Go app does **not connect** to it yet. Group 3 introduces pgx, sqlc and Goose.
+The SQLC configuration is in `sqlc.yaml` and the generated package is in `internal/platform/database/sqlc/`. Database integration tests require an **isolated local** database named `budget_tracker_test` and `go test -tags=integration ./tests/integration`; CI provisions a dedicated PostgreSQL service and runs migrations before tests.
 
-## Architecture
+## Documentation
 
-- `cmd/server/`: entrypoint, signal-aware HTTP server lifecycle
-- `internal/app/`: Chi router, middleware and health routes
-- `internal/config/`: process config and validation
-- `internal/httpx/`: structured HTTP error envelopes
-- `internal/modules/`: future financial domains
-- `internal/platform/`: future infrastructure adapters
-- `internal/views/`: templ UI coming in Group 5
-- `db/`: future SQL migrations and generated queries
-- `web/`: Node 24 asset tooling and upcoming frontend
+- [Architecture](docs/architecture.md)
+- [Group 2 HTTP infrastructure](docs/group-02-http.md)
+- [Group 3 database infrastructure](docs/group-03-database.md)
+- [20-group roadmap](docs/roadmap.md)
 
-CI checks Go on Ubuntu and Windows, Node 24, and Docker/Compose. **No PR, automatic release, image publishing or deployment** is configured.
+GitHub Actions runs checks on Linux and Windows, Node 24 and PostgreSQL. No PR, package publication, automatic deployment, or production database changes are configured.

@@ -23,6 +23,7 @@ type Config struct {
 	ShutdownTimeout   time.Duration
 	MaxBodyBytes      int64
 	MaxHeaderBytes    int
+	Database          Database
 }
 
 func Load() (Config, error) {
@@ -91,6 +92,11 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.MaxHeaderBytes = int(headers)
+
+	cfg.Database, err = loadDatabase(cfg.AppEnv)
+	if err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
 }
 
