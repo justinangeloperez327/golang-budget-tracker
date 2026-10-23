@@ -8,6 +8,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Account struct {
+	ID          string             `json:"id"`
+	WorkspaceID string             `json:"workspace_id"`
+	Name        string             `json:"name"`
+	Kind        string             `json:"kind"`
+	Currency    string             `json:"currency"`
+	SetupKey    string             `json:"setup_key"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ArchivedAt  pgtype.Timestamptz `json:"archived_at"`
+}
+
+type AccountOpening struct {
+	AccountID   string             `json:"account_id"`
+	WorkspaceID string             `json:"workspace_id"`
+	Currency    string             `json:"currency"`
+	AmountMinor int64              `json:"amount_minor"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
 type AppMetadatum struct {
 	Key       string             `json:"key"`
 	Value     string             `json:"value"`

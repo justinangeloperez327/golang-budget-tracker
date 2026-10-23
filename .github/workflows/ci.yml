@@ -77,7 +77,7 @@ jobs:
           test -z "$(git status --porcelain -- internal/platform/database/sqlc)"
 
   database-integration:
-    name: PostgreSQL 17 and browser-form integration
+    name: PostgreSQL 17 and financial setup integration
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -127,7 +127,40 @@ jobs:
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" down
           TEST_MIGRATIONS_DOWN=1 go test -tags=integration -count=1 -run TestReadinessBeforeMigrations ./tests/integration
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" up
-          go test -tags=integration -count=1 ./tests/integration
+          # Account setup and browser registration use persistent rate limits.
+          # Recheck migrated database and transaction primitives without replaying
+          # the authentication suite against the same persisted attempt counters.
+          go test -tags=integration -count=1 -run '^(TestDatabaseReadinessAndGeneratedQueries|TestTransactionCommitAndRollback)
+    name: Node 24 frontend and asset verification
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run check:node
+      - run: npm test
+      - run: npm run assets:build
+      - name: Validate embedded asset output
+        run: |
+          test -s internal/assets/app.css
+          test -s internal/assets/htmx.min.js
+          test -s internal/assets/app.js
+
+  container:
+    name: Docker and Compose validation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate Compose
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+      - name: Build Docker image
+        run: docker build --tag golang-budget-tracker:ci .
+ ./tests/integration
 
   node:
     name: Node 24 frontend and asset verification

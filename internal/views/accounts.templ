@@ -1,0 +1,154 @@
+package views
+
+import "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
+
+templ AccountsPage(items []accounts.Account, csrf string, key string, message string) {
+	@Document("Accounts & wallets", AccountsContent(items, csrf, key, message))
+}
+
+templ AccountsContent(items []accounts.Account, csrf string, key string, message string) {
+	<div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+		<aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+			<a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold">
+				<span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span>
+				Budget Tracker
+			</a>
+			<nav aria-label="Main navigation" class="space-y-2">
+				<a href="/dashboard" class="block rounded-lg px-4 py-3 text-sm font-medium hover:bg-[var(--soft)]">Dashboard</a>
+				<a href="/accounts" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Accounts & wallets</a>
+				<p class="px-4 pt-5 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Coming next</p>
+				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Transactions & ledger</span>
+				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Budgets & reports</span>
+			</nav>
+		</aside>
+		<div class="min-w-0">
+			<header class="flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+				<details class="relative lg:hidden">
+					<summary class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm" aria-label="Open navigation">Menu</summary>
+					<nav class="absolute z-10 mt-2 w-56 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg" aria-label="Mobile navigation">
+						<a class="block rounded-lg px-3 py-2 text-sm" href="/dashboard">Dashboard</a>
+						<a class="block rounded-lg px-3 py-2 text-sm font-semibold text-blue-600" href="/accounts" aria-current="page">Accounts & wallets</a>
+					</nav>
+				</details>
+				<p class="text-sm font-semibold">Personal workspace</p>
+				<div class="flex items-center gap-2">
+					<button class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm" type="button" data-theme-toggle aria-label="Toggle dark mode">Theme</button>
+					<form method="post" action="/logout">
+						<input type="hidden" name="csrf_token" value={ csrf }/>
+						<button class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium" type="submit">Sign out</button>
+					</form>
+				</div>
+			</header>
+			<main id="main" class="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+				<p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Foundation · Group 6</p>
+				<h1 class="mt-2 text-3xl font-semibold tracking-tight">Accounts & wallets</h1>
+				<p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">Create separate AED and PHP accounts. Opening balances are initial snapshots, not live ledger balances. The ledger will be added in Group 7.</p>
+				<div class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
+					<section aria-labelledby="accounts-title" class="min-w-0">
+						<div class="mb-4 flex items-center justify-between gap-3">
+							<h2 id="accounts-title" class="text-lg font-semibold">Configured accounts</h2>
+							<a href="/accounts" class="text-sm font-medium text-blue-600 hover:underline">Refresh</a>
+						</div>
+						@AccountList(items, csrf)
+					</section>
+					<section aria-labelledby="new-account-title" class="self-start rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6">
+						<h2 id="new-account-title" class="text-lg font-semibold">Add an account</h2>
+						<p class="mt-2 text-sm text-[var(--muted)]">Select whether money is held or owed, then enter the initial amount.</p>
+						@AccountForm(csrf, key, message)
+					</section>
+				</div>
+			</main>
+		</div>
+	</div>
+}
+
+templ AccountForm(csrf string, key string, message string) {
+	<form method="post" action="/accounts" hx-post="/accounts" hx-target="#account-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="mt-6 space-y-4">
+		<input type="hidden" name="csrf_token" value={ csrf }/>
+		<input type="hidden" name="setup_key" value={ key }/>
+		<div>
+			<label for="account-name" class="mb-2 block text-sm font-medium">Account name</label>
+			<input id="account-name" name="name" class="field" required maxlength="80" placeholder="e.g. UAE Savings Bank"/>
+		</div>
+		<div>
+			<label for="account-kind" class="mb-2 block text-sm font-medium">Account type</label>
+			<select id="account-kind" name="kind" class="field" required>
+				<option value="bank">Bank account</option>
+				<option value="cash">Cash</option>
+				<option value="savings">Savings account</option>
+				<option value="ewallet">E-wallet</option>
+				<option value="credit">Credit card (amount owed)</option>
+				<option value="loan">Loan or liability (amount owed)</option>
+			</select>
+		</div>
+		<div>
+			<label for="account-currency" class="mb-2 block text-sm font-medium">Currency</label>
+			<select id="account-currency" name="currency" class="field" required>
+				<option value="AED">AED — UAE dirham</option>
+				<option value="PHP">PHP — Philippine peso</option>
+			</select>
+		</div>
+		<div>
+			<label for="account-opening" class="mb-2 block text-sm font-medium">Opening amount</label>
+			<input id="account-opening" class="field" name="opening" type="text" inputmode="decimal" required pattern="[0-9]{1,12}(\.[0-9]{1,2})?" value="0.00" aria-describedby="opening-help"/>
+			<p id="opening-help" class="mt-2 text-xs text-[var(--muted)]">Use 0.00 for empty accounts. Enter the amount owed for credit cards and loans. No negative numbers or FX conversion.</p>
+		</div>
+		@AccountFeedback(message)
+		<button type="submit" class="btn-primary w-full">
+			Save account <span class="htmx-indicator ml-2" aria-hidden="true">Saving…</span>
+		</button>
+	</form>
+}
+
+templ AccountFeedback(message string) {
+	<div id="account-feedback" role="status" aria-live="polite" class="min-h-6 text-sm text-rose-600 dark:text-rose-300">
+		if message != "" {
+			<p>{ message }</p>
+		}
+	</div>
+}
+
+templ AccountList(items []accounts.Account, csrf string) {
+	<div id="account-list" class="space-y-3" aria-live="polite">
+		if len(items) == 0 {
+			<div class="rounded-xl border border-dashed border-[var(--border)] bg-[var(--panel)] p-8">
+				<h3 class="font-semibold">No accounts yet</h3>
+				<p class="mt-2 text-sm text-[var(--muted)]">Use the form to add your first AED or PHP account.</p>
+			</div>
+		} else {
+			for _, a := range items {
+				@AccountCard(a, csrf)
+			}
+		}
+	</div>
+}
+
+templ AccountCard(a accounts.Account, csrf string) {
+	<article class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+		<div class="flex flex-wrap items-start justify-between gap-3">
+			<div>
+				<h3 class="font-semibold">{ a.Name }</h3>
+				<p class="mt-1 text-sm text-[var(--muted)]">{ accounts.KindLabel(a.Kind) } · { a.Currency }</p>
+				if a.Archived {
+					<p class="mt-2 text-xs font-medium text-amber-600">Archived · records retained</p>
+				}
+			</div>
+			<div class="text-right">
+				<p class="text-xs text-[var(--muted)]">
+					if accounts.Nature(a.Kind) == "liability" {
+						Opening amount owed
+					} else {
+						Opening amount held
+					}
+				</p>
+				<p class="mt-1 text-lg font-semibold tabular-nums">{ a.Currency } { accounts.FormatMinor(a.OpeningMinor) }</p>
+			</div>
+		</div>
+		if !a.Archived {
+			<form method="post" action={ "/accounts/" + a.ID + "/archive" } class="mt-4 border-t border-[var(--border)] pt-3">
+				<input type="hidden" name="csrf_token" value={ csrf }/>
+				<button type="submit" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--ink)]" aria-label={ "Archive " + a.Name }>Archive account</button>
+			</form>
+		}
+	</article>
+}

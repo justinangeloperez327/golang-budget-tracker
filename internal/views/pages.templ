@@ -93,7 +93,7 @@ templ StatCard(title string, value string, note string) {
 templ ActivityPanel() {
 	<section id="activity-panel" aria-live="polite" class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6">
 		<h2 class="text-lg font-semibold">Recent activity</h2>
-		<p class="mt-3 text-sm text-[var(--muted)]">No transactions yet. Accounts and wallet management arrive in Group 6.</p>
+		<p class="mt-3 text-sm text-[var(--muted)]">No transactions yet. The transaction ledger arrives in Group 7.</p>
 	</section>
 }
 
@@ -111,8 +111,8 @@ templ DashboardContent(email string, csrf string) {
 			<nav aria-label="Main navigation" class="space-y-2">
 				<a href="/dashboard" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Dashboard</a>
 				<p class="px-4 pt-5 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Coming soon</p>
-				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Accounts & wallets</span>
-				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Transactions</span>
+				<a href="/accounts" class="block rounded-lg px-4 py-2 text-sm font-medium hover:bg-[var(--soft)]">Accounts & wallets</a>
+				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Transactions (Group 7)</span>
 				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Budgets & reports</span>
 			</nav>
 		</aside>
@@ -123,7 +123,7 @@ templ DashboardContent(email string, csrf string) {
 						<summary aria-label="Open navigation" class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Menu</summary>
 						<nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
 							<a class="block rounded-lg px-3 py-2 text-sm font-semibold text-blue-600" href="/dashboard" aria-current="page">Dashboard</a>
-							<p class="px-3 pt-3 text-xs text-[var(--muted)]">More pages arrive in later groups.</p>
+							<a class="block rounded-lg px-3 py-2 text-sm" href="/accounts">Accounts & wallets</a>
 						</nav>
 					</details>
 					<p class="text-sm font-semibold lg:text-base">Personal workspace</p>
@@ -141,7 +141,9 @@ templ DashboardContent(email string, csrf string) {
 				<h1 class="mt-2 text-3xl font-semibold tracking-tight">Your dashboard</h1>
 				<p class="mt-3 text-sm text-[var(--muted)]">Signed in as { email }. Financial data will appear when the ledger modules are ready.</p>
 				<section aria-label="Financial overview" class="mt-9 grid gap-4 md:grid-cols-3">
-					@StatCard("Accounts", "Not set up", "Account and wallet setup is Group 6")
+					<a href="/accounts" class="block rounded-xl focus-visible:outline-offset-4">
+						@StatCard("Accounts", "Configure accounts", "Set up AED/PHP opening amounts")
+					</a>
 					@StatCard("Monthly budget", "Not set up", "Budgets and allocations are Group 10")
 					@StatCard("Savings goals", "Not set up", "Goal tracking is Group 13")
 				</section>

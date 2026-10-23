@@ -65,7 +65,7 @@ func TestDatabaseReadinessAndGeneratedQueries(t *testing.T) {
 	if err := store.Ready(ctx); err != nil {
 		t.Fatalf("readiness after migrations: %v", err)
 	}
-	if marker, err := sqlc.New(store.Pool()).GetSchemaMarker(ctx); err != nil || marker != "group4" {
+	if marker, err := sqlc.New(store.Pool()).GetSchemaMarker(ctx); err != nil || marker != "group6" {
 		t.Fatalf("marker = %q, err = %v", marker, err)
 	}
 }

@@ -174,6 +174,7 @@ func registerUI(r chi.Router, store *auth.Store, cfg config.Auth, logger *slog.L
 		http.SetCookie(w, auth.ClearSessionCookie(cfg))
 		http.Redirect(w, req, "/login", http.StatusSeeOther)
 	})
+	registerAccountsUI(r, store, cfg, logger)
 }
 
 func authMessage(mode string, err error) (string, int) {
