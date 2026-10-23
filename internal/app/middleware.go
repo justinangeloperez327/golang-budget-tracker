@@ -10,8 +10,8 @@ import (
 	"runtime/debug"
 	"time"
 
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/httpx"
 )
 

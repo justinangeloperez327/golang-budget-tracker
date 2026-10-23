@@ -20,7 +20,7 @@ func testHandler(logs *bytes.Buffer) http.Handler {
 }
 
 func TestHealthAndReadiness(t *testing.T) {
-	for _, tc := range []struct{
+	for _, tc := range []struct {
 		path, status, version string
 	}{
 		{"/healthz", "ok", ""},
@@ -71,8 +71,8 @@ func TestHomepageAndSecurityHeaders(t *testing.T) {
 func TestErrorsAreJSON(t *testing.T) {
 	for _, tc := range []struct{
 		method, path string
-		status int
-		code string
+		status       int
+		code         string
 	}{
 		{"GET", "/does-not-exist", 404, "not_found"},
 		{"POST", "/healthz", 405, "method_not_allowed"},
@@ -85,8 +85,8 @@ func TestErrorsAreJSON(t *testing.T) {
 				t.Fatalf("status = %d", rec.Code)
 			}
 			var body struct {
-				Error struct{
-					Code string `json:"code"`
+				Error struct {
+					Code      string `json:"code"`
 					RequestID string `json:"request_id"`
 				} `json:"error"`
 			}
