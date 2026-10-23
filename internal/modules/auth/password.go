@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	memoryKiB uint32 = 19 * 1024
-	iterations uint32 = 2
-	parallelism uint8 = 1
-	saltBytes = 16
-	keyBytes = 32
+	memoryKiB   uint32 = 19 * 1024
+	iterations  uint32 = 2
+	parallelism uint8  = 1
+	saltBytes          = 16
+	keyBytes           = 32
 )
 
 var ErrInvalidPassword = errors.New("invalid password")

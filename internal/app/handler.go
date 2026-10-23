@@ -20,7 +20,7 @@ import (
 type ReadyCheck func(context.Context) error
 
 func NewHandler(logger *slog.Logger, cfg config.Config, ready ReadyCheck) http.Handler {
-	return NewHandlerWithAuth(logger,cfg,ready,nil)
+	return NewHandlerWithAuth(logger, cfg, ready, nil)
 }
 
 func NewHandlerWithAuth(logger *slog.Logger, cfg config.Config, ready ReadyCheck, identity *auth.Store) http.Handler {
@@ -66,7 +66,7 @@ func NewHandlerWithAuth(logger *slog.Logger, cfg config.Config, ready ReadyCheck
 		_, _ = io.WriteString(w, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Golang Budget Tracker</title></head><body><main><h1>Golang Budget Tracker</h1><p>Authentication API is available. templ and HTMX arrive in Group 5.</p></main></body></html>")
 	})
 	if identity != nil {
-		auth.RegisterRoutes(r,identity,cfg.Auth,logger)
+		auth.RegisterRoutes(r, identity, cfg.Auth, logger)
 	}
 	return r
 }

@@ -9,18 +9,18 @@ import (
 )
 
 var (
-	ErrInvalidInput = errors.New("invalid input")
-	ErrCredentials = errors.New("invalid credentials")
-	ErrConflict = errors.New("account already exists")
-	ErrLimited = errors.New("too many attempts")
+	ErrInvalidInput    = errors.New("invalid input")
+	ErrCredentials     = errors.New("invalid credentials")
+	ErrConflict        = errors.New("account already exists")
+	ErrLimited         = errors.New("too many attempts")
 	ErrUnauthenticated = errors.New("authentication required")
 )
 
 type Actor struct {
-	UserID string `json:"user_id"`
+	UserID      string `json:"user_id"`
 	WorkspaceID string `json:"workspace_id"`
-	Email string `json:"email"`
-	CSRFToken string `json:"-"`
+	Email       string `json:"email"`
+	CSRFToken   string `json:"-"`
 }
 
 func NormalizeEmail(raw string) (string, error) {
