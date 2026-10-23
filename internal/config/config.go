@@ -24,6 +24,7 @@ type Config struct {
 	MaxBodyBytes      int64
 	MaxHeaderBytes    int
 	Database          Database
+	Auth              Auth
 }
 
 func Load() (Config, error) {
@@ -94,6 +95,10 @@ func Load() (Config, error) {
 	cfg.MaxHeaderBytes = int(headers)
 
 	cfg.Database, err = loadDatabase(cfg.AppEnv)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.Auth, err = loadAuth(cfg.AppEnv)
 	if err != nil {
 		return Config{}, err
 	}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/app"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/config"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/auth"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/platform/database"
 )
 
@@ -39,9 +40,10 @@ func run() error {
 	}
 	defer store.Close()
 
+	identity := auth.NewStore(store.Pool(), cfg.Auth.SessionTTL)
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           app.NewHandler(logger, cfg, store.Ready),
+		Handler:           app.NewHandlerWithAuth(logger, cfg, store.Ready, identity),
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 		ReadTimeout:       cfg.ReadTimeout,
 		WriteTimeout:      cfg.WriteTimeout,

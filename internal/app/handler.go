@@ -13,12 +13,17 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/config"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/httpx"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/auth"
 )
 
 // ReadyCheck must return a non-nil error when the database or schema is unavailable.
 type ReadyCheck func(context.Context) error
 
 func NewHandler(logger *slog.Logger, cfg config.Config, ready ReadyCheck) http.Handler {
+	return NewHandlerWithAuth(logger,cfg,ready,nil)
+}
+
+func NewHandlerWithAuth(logger *slog.Logger, cfg config.Config, ready ReadyCheck, identity *auth.Store) http.Handler {
 	r := chi.NewRouter()
 	r.Use(requestID)
 	r.Use(accessLog(logger))
@@ -58,8 +63,11 @@ func NewHandler(logger *slog.Logger, cfg config.Config, ready ReadyCheck) http.H
 	})
 	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Golang Budget Tracker</title></head><body><main><h1>Golang Budget Tracker</h1><p>Group 3 PostgreSQL infrastructure is running. templ and HTMX arrive in Group 5.</p></main></body></html>")
+		_, _ = io.WriteString(w, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Golang Budget Tracker</title></head><body><main><h1>Golang Budget Tracker</h1><p>Authentication API is available. templ and HTMX arrive in Group 5.</p></main></body></html>")
 	})
+	if identity != nil {
+		auth.RegisterRoutes(r,identity,cfg.Auth,logger)
+	}
 	return r
 }
 

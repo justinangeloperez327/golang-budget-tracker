@@ -89,6 +89,7 @@ func TestInvalid(t *testing.T) {
 func TestProductionDisablesInsecureSSL(t *testing.T) {
 	clearEnvironment(t)
 	t.Setenv("APP_ENV", "production")
+	t.Setenv("PUBLIC_ORIGIN", "https://budget.example.invalid")
 	if _, err := Load(); err == nil {
 		t.Fatal("expected TLS rejection")
 	}
