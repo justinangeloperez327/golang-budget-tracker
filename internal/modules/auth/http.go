@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -251,5 +250,3 @@ func errorCategory(err error) string {
 		return "database_or_internal"
 	}
 }
-
-var _ = strings.Builder{}

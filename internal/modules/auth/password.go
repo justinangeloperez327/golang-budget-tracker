@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/argon2"
@@ -62,6 +61,3 @@ func VerifyPassword(encoded, password string) bool {
 	actual := argon2.IDKey([]byte(password), salt, t, m, p, uint32(len(expected)))
 	return subtle.ConstantTimeCompare(expected, actual) == 1
 }
-
-// Strengthening password KDF parameters must preserve the encoded PHC format.
-var _ = strconv.IntSize
