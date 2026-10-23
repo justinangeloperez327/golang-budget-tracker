@@ -15,6 +15,7 @@ import (
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/app"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/config"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/auth"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/ledger"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/platform/database"
 )
 
@@ -39,6 +40,11 @@ func run() error {
 		return fmt.Errorf("database initialization: %w", err)
 	}
 	defer store.Close()
+	syncCtx, stopSync := context.WithTimeout(context.Background(), 30*time.Second)
+	defer stopSync()
+	if err := ledger.SyncOpenings(syncCtx, store.Pool()); err != nil {
+		return fmt.Errorf("ledger opening migration: %w", err)
+	}
 
 	identity := auth.NewStore(store.Pool(), cfg.Auth.SessionTTL)
 	server := &http.Server{

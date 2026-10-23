@@ -1,44 +1,39 @@
 # Golang Budget Tracker
 
-Go-first personal finance tracker following the [20-group roadmap](docs/roadmap.md). Stack: **Go 1.27.3, Chi, templ, HTMX, Tailwind CSS 4, PostgreSQL 17**, Node.js 24 for asset tooling only.
+A modular Go personal finance tracker: **Go 1.27.3**, Chi, templ + HTMX + Tailwind CSS 4, PostgreSQL 17 and Node.js 24 for assets. See the [finalized 20-group roadmap](docs/roadmap.md).
 
-**Current release candidate: Group 6 — Accounts and wallets foundation.** After registration, you can create AED/PHP cash, bank, savings, e-wallet, credit-card and loan accounts, record an immutable opening amount, view and archive accounts. Opening amounts are **not live ledger balances**. The ledger, transfers and financial reporting are delivered in later groups.
+**Group 7 — Double-entry ledger foundation.** Account opening amounts from Group 6 are now backed by immutable balanced postings, with asset/liability semantics, safe reversal journals, idempotent transaction APIs within the backend, strict workspace and currency separation, and ledger-derived balances. No fabricated totals or FX conversions.
 
 ## Run locally
 
-Requirements: Go 1.27.3, Node.js 24, Docker/Compose, optionally Make.
+1. Install Go 1.27.3, Node 24, Docker/Compose. Clone the repo and copy `.env.example` to `.env`.
+2. Start PostgreSQL with `docker compose up -d db`.
+3. Export `DATABASE_URL` in the process environment (the Go server does **not** parse `.env` automatically). Local example: `postgres://budget_tracker_dev:local_dev_only_change_me@127.0.0.1:5432/budget_tracker?sslmode=disable`.
+4. Apply migrations explicitly before starting the server:
+   `go run github.com/pressly/goose/v3/cmd/goose@v3.29.0 -dir db/migrations postgres "$DATABASE_URL" up`. Windows PowerShell should use `"$env:DATABASE_URL"`.
+5. Build assets: `npm ci --ignore-scripts && npm run assets:build`.
+6. Generate templ renderers: `go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate`.
+7. Start: `go run ./cmd/server` and visit http://localhost:8080/.
 
-1. Clone the repository; copy `.env.example` to `.env` and run `docker compose up -d db`.
-2. Export `DATABASE_URL` in the shell running Go. The server **does not** automatically parse the `.env` file.
-3. Run Goose migrations explicitly:
-   `go run github.com/pressly/goose/v3/cmd/goose@v3.29.0 -dir db/migrations postgres "$DATABASE_URL" up` (PowerShell: `"$env:DATABASE_URL"`).
-4. Run `npm ci --ignore-scripts && npm run assets:build`.
-5. Run `go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate`.
-6. Run `go run ./cmd/server`; open http://localhost:8080/.
+Production: require HTTPS, correct `PUBLIC_ORIGIN`, separate migration/runtime DB roles, secured backups and monitoring. The server checks migrations and synchronizes any historic Group 6 openings before serving HTTP; it does not apply migrations automatically.
 
-Local `DATABASE_URL` example:
-`postgres://budget_tracker_dev:local_dev_only_change_me@127.0.0.1:5432/budget_tracker?sslmode=disable`
+## Screens and ledger observations
 
-Never use development credentials in production. Set `PUBLIC_ORIGIN` to the exact browser-visible origin; production requires HTTPS and Secure cookies.
+- `/register`, `/login`: secure account access, native forms plus HTMX
+- `/dashboard`: authenticated dashboard shell
+- `/accounts`: account setup, archived accounts, opening snapshots and ledger-backed balances
+- `GET /api/v1/ledger/balances`: authenticated, workspace-scoped balances in integer minor units
+- `GET /api/v1/ledger/journals`: authenticated, workspace-scoped immutable journal history
+- `/healthz` and `/readyz`: liveness and Group 7 database readiness
 
-### Pages
+Opening entries do **not** count as income or expense. Credit-card and loan opening balances are liabilities, not negative cash deposits. Each currency remains separate. The internal `ledger.Store` supports balanced adjustments, exactly-once posting and reversals; no generic public mutation endpoint exists yet. Domain-specific transaction interfaces arrive in Group 8.
 
-- `/login` and `/register` — native HTML forms enhanced by HTMX
-- `/dashboard` — secure dashboard shell and navigation (not yet a live financial dashboard)
-- `/accounts` — account setup and wallet listing, with currency-specific opening amounts
-- `/accounts/rows` — authenticated HTMX account list fragment
-- `/healthz` and `/readyz` — process liveness and Group 6 database migration readiness
-
-Native account form submission works without JavaScript; HTMX enhances feedback and redirects. Account data is scoped to the authenticated workspace. CSRF and same-origin validation apply to every state-changing browser form.
-
-**Important:** Opening amounts use integer minor units with exactly up to two decimals. Positive balances for cash/banks/savings/e-wallets mean assets held; positive credit/loan opening amounts mean debt owed. The application does not currently execute ledger entries, track transactions, convert AED to PHP or compute a live combined balance.
+See [Group 7 accounting guarantees](docs/group-07-ledger.md), [Group 6 account semantics](docs/group-06-accounts.md), and [20-group roadmap](docs/roadmap.md).
 
 ## Verification
 
 ```sh
 npm ci --ignore-scripts
-npm run check:node
-npm test
 npm run assets:build
 go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate
 go mod tidy -diff
@@ -51,6 +46,4 @@ docker compose config --quiet
 docker build -t golang-budget-tracker:local .
 ```
 
-Integration CI uses PostgreSQL 17 with `go test -tags=integration ./tests/integration`. Do not run integration migrations against live financial data.
-
-See [Group 6 account semantics](docs/group-06-accounts.md), [Group 5 UI foundation](docs/group-05-frontend.md), [authentication security](docs/group-04-auth.md) and the [full roadmap](docs/roadmap.md). CI commits never publish, deploy, or open pull requests automatically.
+The PostgreSQL 17 GitHub Actions job runs the isolated integration suite, including ledger concurrency and database-trigger checks. CI never creates a pull request, publishes a release or deploys automatically.

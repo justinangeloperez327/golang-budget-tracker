@@ -39,6 +39,45 @@ type AuthAttempt struct {
 	WindowStarted pgtype.Timestamptz `json:"window_started"`
 }
 
+type LedgerAccount struct {
+	ID              string             `json:"id"`
+	WorkspaceID     string             `json:"workspace_id"`
+	Currency        string             `json:"currency"`
+	Kind            string             `json:"kind"`
+	SourceAccountID pgtype.Text        `json:"source_account_id"`
+	SystemKey       pgtype.Text        `json:"system_key"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+type LedgerJournal struct {
+	ID                string             `json:"id"`
+	WorkspaceID       string             `json:"workspace_id"`
+	Currency          string             `json:"currency"`
+	IdempotencyKey    string             `json:"idempotency_key"`
+	Kind              string             `json:"kind"`
+	Fingerprint       []byte             `json:"fingerprint"`
+	ReversesJournalID pgtype.Text        `json:"reverses_journal_id"`
+	Sealed            bool               `json:"sealed"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+}
+
+type LedgerLine struct {
+	ID              int64  `json:"id"`
+	JournalID       string `json:"journal_id"`
+	LedgerAccountID string `json:"ledger_account_id"`
+	WorkspaceID     string `json:"workspace_id"`
+	Currency        string `json:"currency"`
+	DebitMinor      int64  `json:"debit_minor"`
+	CreditMinor     int64  `json:"credit_minor"`
+}
+
+type LedgerOpeningImport struct {
+	AccountID   string             `json:"account_id"`
+	WorkspaceID string             `json:"workspace_id"`
+	JournalID   pgtype.Text        `json:"journal_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
 type Session struct {
 	TokenHash []byte             `json:"token_hash"`
 	UserID    string             `json:"user_id"`

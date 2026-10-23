@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/ledger"
 )
 
 type Store struct{ db *pgxpool.Pool }
@@ -35,7 +36,10 @@ func (s *Store) Create(ctx context.Context, workspaceID string, input CreateInpu
 		_, err := tx.Exec(ctx, `
 			INSERT INTO account_openings (account_id,workspace_id,currency,amount_minor)
 			VALUES ($1,$2,$3,$4)`, id, workspaceID, in.Currency, minor)
-		return err
+		if err != nil {
+			return err
+		}
+		return ledger.EnsureOpeningTx(ctx, tx, workspaceID, id)
 	})
 	if err != nil {
 		var pgerr *pgconn.PgError
@@ -71,6 +75,17 @@ func (s *Store) List(ctx context.Context, workspaceID string) ([]Account, error)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate accounts: %w", err)
+	}
+	balances, err := ledger.NewStore(s.db).Balances(ctx, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("read ledger balances: %w", err)
+	}
+	byID := make(map[string]int64, len(balances))
+	for _, b := range balances {
+		byID[b.AccountID] = b.Minor
+	}
+	for i := range items {
+		items[i].LedgerMinor = byID[items[i].ID]
 	}
 	return items, nil
 }

@@ -70,6 +70,7 @@ func NewHandlerWithAuth(logger *slog.Logger, cfg config.Config, ready ReadyCheck
 		})
 	} else {
 		auth.RegisterRoutes(r, identity, cfg.Auth, logger)
+		registerLedgerAPI(r, identity, cfg.Auth)
 		registerUI(r, identity, cfg.Auth, logger)
 	}
 	return r
