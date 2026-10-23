@@ -11,9 +11,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/assets"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/config"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/httpx"
-	"github.com/justinangeloperez327/golang-budget-tracker/internal/assets"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/auth"
 )
 

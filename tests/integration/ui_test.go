@@ -3,8 +3,8 @@
 package integration
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -24,9 +24,9 @@ func uiFixture(t *testing.T) http.Handler {
 	db := openDB(t)
 	cfg := config.Config{
 		RequestTimeout: 4 * time.Second,
-		MaxBodyBytes: 8192,
-		Database: config.Database{ReadyTimeout: time.Second},
-		Auth: config.Auth{PublicOrigin: "http://localhost:8080", SessionTTL: 7 * 24 * time.Hour},
+		MaxBodyBytes:   8192,
+		Database:       config.Database{ReadyTimeout: time.Second},
+		Auth:           config.Auth{PublicOrigin: "http://localhost:8080", SessionTTL: 7 * 24 * time.Hour},
 	}
 	return app.NewHandlerWithAuth(slog.New(slog.NewTextHandler(io.Discard, nil)),
 		cfg, db.Ready, auth.NewStore(db.Pool(), cfg.Auth.SessionTTL))
@@ -115,7 +115,9 @@ func TestHTMLAuthenticationAndIsolation(t *testing.T) {
 	if csrfRec.Code != 200 {
 		t.Fatalf("get csrf = %d", csrfRec.Code)
 	}
-	var token struct{ CSRF string `json:"csrf_token"` }
+	var token struct {
+		CSRF string `json:"csrf_token"`
+	}
 	if err := json.Unmarshal(csrfRec.Body.Bytes(), &token); err != nil {
 		t.Fatal(err)
 	}
