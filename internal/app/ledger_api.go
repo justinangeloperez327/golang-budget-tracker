@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -41,7 +42,7 @@ func registerLedgerAPI(r chi.Router, identity *auth.Store, cfg config.Auth) {
 				httpx.WriteError(w,req,http.StatusServiceUnavailable,"temporarily_unavailable","Please retry later")
 				return
 			}
-			respondJSON(w,http.StatusOK,map[string]any{"balances":balances})
+			writeLedgerJSON(w,map[string]any{"balances":balances})
 		})
 		api.Get("/journals",func(w http.ResponseWriter,req *http.Request){
 			actor,ok:=check(w,req)
@@ -51,7 +52,13 @@ func registerLedgerAPI(r chi.Router, identity *auth.Store, cfg config.Auth) {
 				httpx.WriteError(w,req,http.StatusServiceUnavailable,"temporarily_unavailable","Please retry later")
 				return
 			}
-			respondJSON(w,http.StatusOK,map[string]any{"journals":history})
+			writeLedgerJSON(w,map[string]any{"journals":history})
 		})
 	})
+}
+
+func writeLedgerJSON(w http.ResponseWriter, value any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(value)
 }
