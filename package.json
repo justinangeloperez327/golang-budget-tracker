@@ -1,0 +1,15 @@
+{
+  "name": "golang-budget-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node.js 24 tooling for Go templ + HTMX assets",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "check:node": "node scripts/check-node.mjs",
+    "test": "node --test scripts/*.test.mjs",
+    "assets:build": "node scripts/build-assets.mjs"
+  }
+}

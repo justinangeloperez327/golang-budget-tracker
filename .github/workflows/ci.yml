@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Toolchain
+        run: go version
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test ./...
+      - name: Build
+        run: go build ./cmd/server
+      - name: Formatting (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          files="$(gofmt -l cmd internal)"
+          if [[ -n "$files" ]]; then
+            echo "$files"
+            exit 1
+          fi
+      - name: Race tests (Linux)
+        if: runner.os == 'Linux'
+        run: go test -race ./...
+
+  node:
+    name: Node 24 tooling
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run check:node
+      - run: npm test
+      - run: npm run assets:build
+      - run: test -s web/assets/app.css
+
+  container:
+    name: Docker and Compose validation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate local Compose config
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+      - name: Build Docker image
+        run: docker build --tag golang-budget-tracker:ci .
