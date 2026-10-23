@@ -1,43 +1,50 @@
 # Golang Budget Tracker
 
-Go-first personal finance application using Go 1.27.3, Chi, PostgreSQL, and planned templ + HTMX/Tailwind frontend. See the [20-group roadmap](docs/roadmap.md).
+Go-first personal finance tracker following the [20-group roadmap](docs/roadmap.md). Stack: **Go 1.27.3, Chi, templ, HTMX, Tailwind CSS 4, PostgreSQL 17**, Node.js 24 for asset tooling only.
 
-**Current implementation: Group 4 — Identity and authorization.** Registration, login/logout, Argon2id, database sessions, CSRF and workspace ownership are implemented as a JSON API. The financial ledger and templ/HTMX UI are future groups.
+**Group 5 delivers the responsive web foundation:** registration/login pages, authenticated dashboard shell, self-hosted assets, navigation, theme toggle, reusable templ components, HTMX form feedback and dashboard fragments. Financial balances are not implemented yet; the cards correctly display **Not set up**.
 
-## Local setup
+## Run locally
 
-1. Copy `.env.example` to `.env` and start PostgreSQL: `docker compose up -d db`.
-2. Export `DATABASE_URL` in the shell running Go (the server does **not** load `.env` automatically). Example Bash: `export DATABASE_URL='postgres://budget_tracker_dev:local_dev_only_change_me@127.0.0.1:5432/budget_tracker?sslmode=disable'`. PowerShell: `$env:DATABASE_URL='postgres://budget_tracker_dev:local_dev_only_change_me@127.0.0.1:5432/budget_tracker?sslmode=disable'`.
-3. Migrate: `go run github.com/pressly/goose/v3/cmd/goose@v3.29.0 -dir db/migrations postgres "$DATABASE_URL" up` (PowerShell uses `"$env:DATABASE_URL"`).
-4. Run `go run ./cmd/server`.
+Install Go 1.27.3, Node.js 24, Docker/Compose, and optionally Make.
 
-`GET /healthz` checks liveness; `GET /readyz` checks PostgreSQL and migration readiness.
+1. Clone the repository, copy `.env.example` to `.env`, and run `docker compose up -d db`.
+2. Export `DATABASE_URL` in the shell that starts Go. (The Go app does not parse `.env` automatically.)
+3. Run Goose migrations:
+   `go run github.com/pressly/goose/v3/cmd/goose@v3.29.0 -dir db/migrations postgres "$DATABASE_URL" up`
+   (PowerShell: use `"$env:DATABASE_URL"`).
+4. Install/build frontend assets: `npm ci --ignore-scripts && npm run assets:build`.
+5. Generate templ renderers: `go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate`.
+6. Start the Go app: `go run ./cmd/server`, then open http://localhost:8080/.
 
-## Identity API
+Example dev URL: `postgres://budget_tracker_dev:local_dev_only_change_me@127.0.0.1:5432/budget_tracker?sslmode=disable`. Set it in your shell; do not use this local-only credential in production. Set `PUBLIC_ORIGIN` to exactly the browser-visible origin (default http://localhost:8080). TLS/HTTPS is required in production.
+
+## Frontend architecture
+
+- `internal/views/pages.templ`: page shell, login/register forms, dashboard, reusable cards, feedback and partials.
+- `internal/app/ui.go`: native form and HTMX HTTP endpoints, auth and authorization.
+- `internal/assets/`: generated styles/scripts embedded into the Go binary; no CDN.
+- `web/styles/base.css`: Tailwind 4 theme and component styling.
+- `web/scripts/app.js`: progressive dark/light mode enhancement.
+
+The existing versioned JSON auth API remains available. Login/register forms are native HTML POSTs with HTMX enhancement, and logout requires a session-bound CSRF token. See [Group 5 documentation](docs/group-05-frontend.md).
+
+## Verification
 
 ```sh
-curl -i -X POST http://localhost:8080/api/v1/auth/register \
-  -H 'Content-Type: application/json' \
-  -H 'Origin: http://localhost:8080' \
-  -d '{"email":"person@example.com","password":"long-unique-password"}'
-```
-
-Routes: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, `GET /api/v1/auth/csrf`, `POST /api/v1/auth/logout`, and `GET /api/v1/workspaces/{workspaceID}`. A successful registration/login sets an HttpOnly session cookie and returns a CSRF token. Browser clients must supply a matching `Origin` for all POSTs; logout requires `X-CSRF-Token`. See [Group 4 security notes](docs/group-04-auth.md).
-
-For production, configure `PUBLIC_ORIGIN=https://your-real-hostname` and TLS at a trusted reverse proxy. The session cookie becomes Secure and `__Host-` prefixed. The app intentionally does not trust forwarding headers.
-
-## Quality gates
-
-```sh
+npm ci --ignore-scripts
+npm run check:node
+npm test
+npm run assets:build
+go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate
 go mod tidy -diff
 go mod verify
 go vet ./...
 go test ./...
 go test -race ./...
 go build ./cmd/server
-npm ci --ignore-scripts
-npm test
 docker compose config --quiet
+docker build -t golang-budget-tracker:local .
 ```
 
-GitHub Actions also runs isolated PostgreSQL 17/Goose integration tests, sqlc verification, Node 24 and Docker builds. Migrations are explicit, CI cannot deploy, and no PR is required.
+CI additionally runs PostgreSQL integration tests with an isolated database and validates sqlc code generation. **No pull request, automatic production deployment or package publication** is configured.

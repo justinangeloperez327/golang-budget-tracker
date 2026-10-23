@@ -27,11 +27,19 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Toolchain
-        run: go version
-      - name: Ensure committed Go modules are tidy
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Build self-hosted assets
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run assets:build
+      - name: Generate pinned templ renderers
+        run: go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate
+      - name: Ensure tidy committed Go modules
         run: go mod tidy -diff
-      - name: Verify downloaded dependencies
+      - name: Verify modules
         run: go mod verify
       - name: Vet
         run: go vet ./...
@@ -39,13 +47,13 @@ jobs:
         run: go test ./...
       - name: Build
         run: go build ./cmd/server
-      - name: Formatting (Linux)
+      - name: Go formatting
         if: runner.os == 'Linux'
         shell: bash
         run: |
           gofmt -w cmd internal tests
           git diff --exit-code -- '*.go'
-      - name: Race tests (Linux)
+      - name: Race tests
         if: runner.os == 'Linux'
         run: go test -race ./...
 
@@ -69,7 +77,7 @@ jobs:
           test -z "$(git status --porcelain -- internal/platform/database/sqlc)"
 
   database-integration:
-    name: PostgreSQL 17 and Goose migrations
+    name: PostgreSQL 17 and browser-form integration
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -93,7 +101,16 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Verify committed Go module definitions
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Generate frontend
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run assets:build
+          go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate
+      - name: Module integrity
         run: go mod tidy -diff
       - name: Install pinned Goose
         run: go install github.com/pressly/goose/v3/cmd/goose@v3.29.0
@@ -102,9 +119,9 @@ jobs:
         run: |
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" up
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" status
-      - name: Test PostgreSQL integration and transactions
+      - name: Test database and UI forms
         run: go test -tags=integration -count=1 ./tests/integration
-      - name: Validate migration down/up cycle against disposable CI database
+      - name: Validate migration down/up cycle
         shell: bash
         run: |
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" down
@@ -113,7 +130,7 @@ jobs:
           go test -tags=integration -count=1 ./tests/integration
 
   node:
-    name: Node 24 tooling
+    name: Node 24 frontend and asset verification
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -121,11 +138,21 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Resolve exact frontend packages
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          echo 'GROUP5_PACKAGE_LOCK_START'
+          cat package-lock.json
+          echo 'GROUP5_PACKAGE_LOCK_END'
       - run: npm ci --ignore-scripts
       - run: npm run check:node
       - run: npm test
       - run: npm run assets:build
-      - run: test -s web/assets/app.css
+      - name: Validate embedded asset output
+        run: |
+          test -s internal/assets/app.css
+          test -s internal/assets/htmx.min.js
+          test -s internal/assets/app.js
 
   container:
     name: Docker and Compose validation

@@ -1,10 +1,22 @@
+FROM node:24-alpine AS assets
+WORKDIR /src
+COPY package.json package-lock.json ./
+RUN npm install --ignore-scripts --no-audit --no-fund
+COPY scripts ./scripts
+COPY web ./web
+COPY internal/views ./internal/views
+RUN npm run assets:build
+
 FROM golang:1.27.3-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
-RUN CGO_ENABLED=0 go build -mod=readonly -trimpath -ldflags="-s -w" -o /out/budget-tracker ./cmd/server
+COPY --from=assets /src/internal/assets/app.css ./internal/assets/app.css
+COPY --from=assets /src/internal/assets/app.js ./internal/assets/app.js
+COPY --from=assets /src/internal/assets/htmx.min.js ./internal/assets/htmx.min.js
+RUN go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/budget-tracker ./cmd/server
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates

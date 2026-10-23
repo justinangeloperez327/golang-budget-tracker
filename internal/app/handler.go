@@ -13,6 +13,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/config"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/httpx"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/assets"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/auth"
 )
 
@@ -32,6 +33,7 @@ func NewHandlerWithAuth(logger *slog.Logger, cfg config.Config, ready ReadyCheck
 	r.Use(limitBody(cfg.MaxBodyBytes))
 	r.Use(chimiddleware.Timeout(cfg.RequestTimeout))
 
+	r.Handle("/assets/*", http.StripPrefix("/assets/", http.FileServer(http.FS(assets.FS))))
 	r.NotFound(func(w http.ResponseWriter, req *http.Request) {
 		httpx.WriteError(w, req, http.StatusNotFound, "not_found", "Resource not found")
 	})
@@ -61,12 +63,14 @@ func NewHandlerWithAuth(logger *slog.Logger, cfg config.Config, ready ReadyCheck
 	r.Get("/api/v1/status", func(w http.ResponseWriter, req *http.Request) {
 		writeStatus(w, statusResponse{Status: "ok", Service: "golang-budget-tracker", Version: "v1"})
 	})
-	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Golang Budget Tracker</title></head><body><main><h1>Golang Budget Tracker</h1><p>Authentication API is available. templ and HTMX arrive in Group 5.</p></main></body></html>")
-	})
-	if identity != nil {
+	if identity == nil {
+		r.Get("/", func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			_, _ = io.WriteString(w, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Golang Budget Tracker</title></head><body><main><h1>Golang Budget Tracker</h1><p>Authentication API is available. templ and HTMX arrive in Group 5.</p></main></body></html>")
+		})
+	} else {
 		auth.RegisterRoutes(r, identity, cfg.Auth, logger)
+		registerUI(r, identity, cfg.Auth, logger)
 	}
 	return r
 }

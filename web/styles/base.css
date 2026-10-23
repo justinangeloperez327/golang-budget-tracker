@@ -1,2 +1,67 @@
-/* Group 1 bootstrap placeholder. Tailwind CSS and design tokens arrive in Group 5. */
-:root { color-scheme: light dark; }
+@import "tailwindcss";
+@source "../../internal/views/**/*.templ";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f9fc;
+  --panel: #ffffff;
+  --soft: #eef3f9;
+  --ink: #101b31;
+  --muted: #607088;
+  --border: #dee5ef;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c1321;
+  --panel: #141f30;
+  --soft: #22334b;
+  --ink: #f4f7fd;
+  --muted: #abbad1;
+  --border: #2b3b52;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  z-index: 50;
+}
+.skip-link:focus { top: 8px; }
+.field {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 11px 13px;
+  outline-offset: 3px;
+}
+.field:focus { outline: 2px solid #2563eb; border-color: transparent; }
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 9px;
+  padding: 12px 17px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 650;
+}
+.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:disabled { opacity: .65; cursor: progress; }
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator { display: inline; }
+:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }

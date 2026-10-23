@@ -1,15 +1,19 @@
 {
   "name": "golang-budget-tracker",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
-  "description": "Node.js 24 tooling for Go templ + HTMX assets",
+  "description": "Node.js 24 Tailwind and htmx asset pipeline for Go templ",
   "type": "module",
-  "engines": {
-    "node": ">=24 <25"
-  },
+  "engines": { "node": ">=24 <25" },
   "scripts": {
     "check:node": "node scripts/check-node.mjs",
     "test": "node --test scripts/*.test.mjs",
-    "assets:build": "node scripts/build-assets.mjs"
+    "assets:build": "node scripts/build-assets.mjs",
+    "assets:watch": "tailwindcss -i web/styles/base.css -o internal/assets/app.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "htmx.org": "2.0.11",
+    "tailwindcss": "4.3.3"
   }
 }

@@ -1,0 +1,156 @@
+package views
+
+import "github.com/a-h/templ"
+
+templ Document(title string, content templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en" data-theme="light">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width,initial-scale=1"/>
+			<meta name="color-scheme" content="light dark"/>
+			<title>{ title } — Budget Tracker</title>
+			<link rel="stylesheet" href="/assets/app.css"/>
+			<script defer src="/assets/app.js"></script>
+			<script defer src="/assets/htmx.min.js"></script>
+		</head>
+		<body class="min-h-screen bg-[var(--bg)] text-[var(--ink)] antialiased">
+			<a class="skip-link" href="#main">Skip to content</a>
+			@content
+		</body>
+	</html>
+}
+
+templ Feedback(message string) {
+	<div id="auth-feedback" aria-live="polite" role="status" class="min-h-7 text-sm font-medium text-rose-600 dark:text-rose-300">
+		if message != "" {
+			<p>{ message }</p>
+		}
+	</div>
+}
+
+templ AuthPage(mode string, email string, message string) {
+	@Document(authPageTitle(mode), AuthContent(mode, email, message))
+}
+
+templ AuthContent(mode string, email string, message string) {
+	<main id="main" class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-5 py-12 lg:grid lg:grid-cols-2 lg:gap-20">
+		<section class="mb-12 flex flex-col justify-center lg:mb-0">
+			<a href="/" class="mb-12 inline-flex items-center gap-3 text-sm font-bold tracking-wide">
+				<span class="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-lg text-white">B</span>
+				Budget Tracker
+			</a>
+			<p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">A clearer view of your money</p>
+			<h1 class="max-w-lg text-4xl font-semibold tracking-tight sm:text-5xl">Plan carefully. Spend confidently.</h1>
+			<p class="mt-5 max-w-md text-base leading-7 text-[var(--muted)]">A focused place for your income, expenses, wallets, and goals. Start with a secure personal workspace.</p>
+			<p class="mt-10 text-xs text-[var(--muted)]">AED and PHP accounting · Private by default</p>
+		</section>
+		<section class="flex items-center">
+			<div class="w-full rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm sm:p-9">
+				if mode == "register" {
+					<h2 class="text-2xl font-semibold tracking-tight">Create an account</h2>
+					<p class="mt-2 text-sm text-[var(--muted)]">Your personal workspace is created when you register.</p>
+					@AuthForm("/register", "Create account", email, message, true)
+					<p class="mt-5 text-sm text-[var(--muted)]">Already registered? <a class="font-semibold text-blue-600 hover:underline" href="/login">Sign in</a></p>
+				} else {
+					<h2 class="text-2xl font-semibold tracking-tight">Welcome back</h2>
+					<p class="mt-2 text-sm text-[var(--muted)]">Sign in to your budget workspace.</p>
+					@AuthForm("/login", "Sign in", email, message, false)
+					<p class="mt-5 text-sm text-[var(--muted)]">New here? <a class="font-semibold text-blue-600 hover:underline" href="/register">Create account</a></p>
+				}
+			</div>
+		</section>
+	</main>
+}
+
+templ AuthForm(endpoint string, submitLabel string, email string, message string, registering bool) {
+	<form method="post" action={ endpoint } hx-post={ endpoint } hx-target="#auth-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="mt-7 space-y-5">
+		<div>
+			<label for="email" class="mb-2 block text-sm font-medium">Email address</label>
+			<input id="email" name="email" type="email" value={ email } required autocomplete="email" maxlength="254" placeholder="you@example.com" class="field"/>
+		</div>
+		<div>
+			<label for="password" class="mb-2 block text-sm font-medium">Password</label>
+			<input id="password" name="password" type="password" required autocomplete={ passwordAutocomplete(registering) } minlength="12" maxlength="128" placeholder="At least 12 characters" class="field"/>
+			if registering {
+				<p class="mt-2 text-xs text-[var(--muted)]">Use at least 12 characters and a unique password.</p>
+			}
+		</div>
+		@Feedback(message)
+		<button type="submit" class="btn-primary w-full">
+			<span>{ submitLabel }</span>
+			<span class="htmx-indicator ml-2" aria-hidden="true">Working…</span>
+		</button>
+	</form>
+}
+
+templ StatCard(title string, value string, note string) {
+	<article class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+		<p class="text-sm font-medium text-[var(--muted)]">{ title }</p>
+		<p class="mt-3 text-2xl font-semibold tracking-tight">{ value }</p>
+		<p class="mt-3 text-xs text-[var(--muted)]">{ note }</p>
+	</article>
+}
+
+templ ActivityPanel() {
+	<section id="activity-panel" aria-live="polite" class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6">
+		<h2 class="text-lg font-semibold">Recent activity</h2>
+		<p class="mt-3 text-sm text-[var(--muted)]">No transactions yet. Accounts and wallet management arrive in Group 6.</p>
+	</section>
+}
+
+templ DashboardPage(email string, csrf string) {
+	@Document("Dashboard", DashboardContent(email, csrf))
+}
+
+templ DashboardContent(email string, csrf string) {
+	<div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+		<aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+			<a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold">
+				<span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span>
+				Budget Tracker
+			</a>
+			<nav aria-label="Main navigation" class="space-y-2">
+				<a href="/dashboard" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Dashboard</a>
+				<p class="px-4 pt-5 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Coming soon</p>
+				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Accounts & wallets</span>
+				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Transactions</span>
+				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Budgets & reports</span>
+			</nav>
+		</aside>
+		<div class="min-w-0">
+			<header class="flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+				<div class="flex items-center gap-3">
+					<details class="relative lg:hidden">
+						<summary aria-label="Open navigation" class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Menu</summary>
+						<nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+							<a class="block rounded-lg px-3 py-2 text-sm font-semibold text-blue-600" href="/dashboard" aria-current="page">Dashboard</a>
+							<p class="px-3 pt-3 text-xs text-[var(--muted)]">More pages arrive in later groups.</p>
+						</nav>
+					</details>
+					<p class="text-sm font-semibold lg:text-base">Personal workspace</p>
+				</div>
+				<div class="flex items-center gap-2">
+					<button class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm" type="button" data-theme-toggle aria-label="Toggle dark mode">Theme</button>
+					<form method="post" action="/logout">
+						<input type="hidden" name="csrf_token" value={ csrf }/>
+						<button class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--soft)]" type="submit">Sign out</button>
+					</form>
+				</div>
+			</header>
+			<main id="main" class="mx-auto max-w-6xl px-5 py-9 sm:px-8">
+				<p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Overview</p>
+				<h1 class="mt-2 text-3xl font-semibold tracking-tight">Your dashboard</h1>
+				<p class="mt-3 text-sm text-[var(--muted)]">Signed in as { email }. Financial data will appear when the ledger modules are ready.</p>
+				<section aria-label="Financial overview" class="mt-9 grid gap-4 md:grid-cols-3">
+					@StatCard("Accounts", "Not set up", "Account and wallet setup is Group 6")
+					@StatCard("Monthly budget", "Not set up", "Budgets and allocations are Group 10")
+					@StatCard("Savings goals", "Not set up", "Goal tracking is Group 13")
+				</section>
+				<div class="mt-6" hx-get="/dashboard/activity" hx-trigger="revealed" hx-swap="outerHTML">
+					@ActivityPanel()
+				</div>
+			</main>
+		</div>
+	</div>
+}

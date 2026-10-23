@@ -10,7 +10,10 @@ coverage.out
 *.prof
 node_modules/
 npm-debug.log*
-web/assets/app.css
+internal/assets/app.css
+internal/assets/app.js
+internal/assets/htmx.min.js
+internal/views/*_templ.go
 .idea/
 .vscode/*
 !.vscode/extensions.json
