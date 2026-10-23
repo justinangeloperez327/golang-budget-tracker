@@ -41,11 +41,11 @@ func testURL(t *testing.T) string {
 func openDB(t *testing.T) *database.Store {
 	t.Helper()
 	cfg := config.Database{
-		URL: testURL(t),
-		MaxConns: 4,
-		MinConns: 0,
-		ConnectTimeout: 3 * time.Second,
-		ReadyTimeout: 2 * time.Second,
+		URL:             testURL(t),
+		MaxConns:        4,
+		MinConns:        0,
+		ConnectTimeout:  3 * time.Second,
+		ReadyTimeout:    2 * time.Second,
 		MaxConnLifetime: time.Hour,
 		MaxConnIdleTime: 5 * time.Minute,
 	}
