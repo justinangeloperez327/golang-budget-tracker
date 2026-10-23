@@ -74,7 +74,7 @@ CREATE TRIGGER ledger_accounts_immutable BEFORE UPDATE OR DELETE ON ledger_accou
 -- An entry may transition from draft to sealed only within its creating
 -- transaction. Once sealed, its metadata and lines can never be changed.
 -- +goose StatementBegin
-CREATE FUNCTION ledger_guard_journal_update() RETURNS trigger AS $
+CREATE FUNCTION ledger_guard_journal_update() RETURNS trigger AS $$
 BEGIN
     IF TG_OP='UPDATE' AND OLD.sealed=FALSE AND NEW.sealed=TRUE
        AND (to_jsonb(OLD)-'sealed')=(to_jsonb(NEW)-'sealed') THEN
@@ -82,7 +82,7 @@ BEGIN
     END IF;
     RAISE EXCEPTION 'journal is immutable after sealing';
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 -- +goose StatementEnd
 CREATE TRIGGER ledger_journals_immutable BEFORE UPDATE OR DELETE ON ledger_journals
     FOR EACH ROW EXECUTE FUNCTION ledger_guard_journal_update();
@@ -94,7 +94,7 @@ CREATE TRIGGER ledger_openings_immutable BEFORE UPDATE OR DELETE ON ledger_openi
 -- Acquire a lock on the journal before each line insert. No new lines may
 -- ever attach to a previously sealed journal, even via direct SQL.
 -- +goose StatementBegin
-CREATE FUNCTION ledger_allow_line_insert() RETURNS trigger AS $
+CREATE FUNCTION ledger_allow_line_insert() RETURNS trigger AS $$
 DECLARE
     is_sealed BOOLEAN;
 BEGIN
@@ -106,7 +106,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 -- +goose StatementEnd
 CREATE TRIGGER ledger_lines_insert_guard BEFORE INSERT ON ledger_lines
     FOR EACH ROW EXECUTE FUNCTION ledger_allow_line_insert();
