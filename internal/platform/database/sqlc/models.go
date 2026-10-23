@@ -13,3 +13,31 @@ type AppMetadatum struct {
 	Value     string             `json:"value"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
+
+type AuthAttempt struct {
+	KeyHash       []byte             `json:"key_hash"`
+	Count         int32              `json:"count"`
+	WindowStarted pgtype.Timestamptz `json:"window_started"`
+}
+
+type Session struct {
+	TokenHash []byte             `json:"token_hash"`
+	UserID    string             `json:"user_id"`
+	CsrfToken string             `json:"csrf_token"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type User struct {
+	ID           string             `json:"id"`
+	Email        string             `json:"email"`
+	PasswordHash string             `json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+type Workspace struct {
+	ID          string             `json:"id"`
+	OwnerUserID string             `json:"owner_user_id"`
+	Name        string             `json:"name"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
