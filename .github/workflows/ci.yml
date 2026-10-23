@@ -33,7 +33,7 @@ jobs:
           package-manager-cache: false
       - name: Build self-hosted assets
         run: |
-          npm install --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts
           npm run assets:build
       - name: Generate pinned templ renderers
         run: go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate
@@ -107,7 +107,7 @@ jobs:
           package-manager-cache: false
       - name: Generate frontend
         run: |
-          npm install --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts
           npm run assets:build
           go run github.com/a-h/templ/cmd/templ@v0.3.1020 generate
       - name: Module integrity
@@ -138,12 +138,6 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - name: Resolve exact frontend packages
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          echo 'GROUP5_PACKAGE_LOCK_START'
-          cat package-lock.json
-          echo 'GROUP5_PACKAGE_LOCK_END'
       - run: npm ci --ignore-scripts
       - run: npm run check:node
       - run: npm test

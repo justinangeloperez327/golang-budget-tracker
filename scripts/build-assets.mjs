@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 const out = 'internal/assets';
 await mkdir(out, { recursive: true });
-const binary = join('node_modules', '.bin', process.platform === 'win32' ? 'tailwindcss.cmd' : 'tailwindcss');
-const command = spawnSync(binary, ['-i', 'web/styles/base.css', '-o', join(out, 'app.css'), '--minify'], { stdio: 'inherit' });
+const cli = join('node_modules', '@tailwindcss', 'cli', 'dist', 'index.mjs');
+const command = spawnSync(process.execPath, [cli, '-i', 'web/styles/base.css', '-o', join(out, 'app.css'), '--minify'], { stdio: 'inherit' });
 if (command.error || command.status !== 0) {
   throw command.error ?? new Error('Tailwind CSS generation failed: ' + command.status);
 }

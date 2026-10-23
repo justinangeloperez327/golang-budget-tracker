@@ -1,7 +1,7 @@
 FROM node:24-alpine AS assets
 WORKDIR /src
 COPY package.json package-lock.json ./
-RUN npm install --ignore-scripts --no-audit --no-fund
+RUN npm ci --ignore-scripts
 COPY scripts ./scripts
 COPY web ./web
 COPY internal/views ./internal/views
