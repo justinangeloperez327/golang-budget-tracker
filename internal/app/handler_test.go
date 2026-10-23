@@ -69,7 +69,7 @@ func TestHomepageAndSecurityHeaders(t *testing.T) {
 }
 
 func TestErrorsAreJSON(t *testing.T) {
-	for _, tc := range []struct{
+	for _, tc := range []struct {
 		method, path string
 		status       int
 		code         string
