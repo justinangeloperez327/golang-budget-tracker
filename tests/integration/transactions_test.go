@@ -198,7 +198,7 @@ func TestFinanceBrowserFlowCSRFAndHistory(t *testing.T) {
 	handler := uiFixture(t)
 	actor, cookie := registration(t, handler, fmt.Sprintf("finance-ui-%d@example.test", time.Now().UnixNano()))
 	page := formRequest(handler, "GET", "/transactions", nil, cookie, false, "")
-	if page.Code != 200 || !strings.Contains(page.Body.String(), "Income &amp; expenses") {
+	if page.Code != 200 || !strings.Contains(page.Body.String(), "Income & expenses") {
 		t.Fatalf("transactions page: %d %s", page.Code, page.Body.String())
 	}
 	if rec := formRequest(handler, "GET", "/transactions", nil, nil, false, ""); rec.Code != 303 {
