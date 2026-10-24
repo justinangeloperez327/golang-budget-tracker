@@ -2,7 +2,7 @@
 
 A modular Go personal finance tracker: **Go 1.27.3**, Chi, templ + HTMX + Tailwind CSS 4, PostgreSQL 17 and Node.js 24 for assets. See the [finalized 20-group roadmap](docs/roadmap.md).
 
-**Group 7 — Double-entry ledger foundation.** Account opening amounts from Group 6 are now backed by immutable balanced postings, with asset/liability semantics, safe reversal journals, idempotent transaction APIs within the backend, strict workspace and currency separation, and ledger-derived balances. No fabricated totals or FX conversions.
+**Group 8 — Income, expenses and transactions.** Authenticated users can create AED/PHP income and expense categories, record split transactions in an immutable double-entry ledger, link partial refunds to the original expense, and filter transaction history. Idempotent writes, workspace isolation, and asset/credit-liability accounting are enforced by PostgreSQL transactions.
 
 ## Run locally
 
@@ -22,13 +22,14 @@ Production: require HTTPS, correct `PUBLIC_ORIGIN`, separate migration/runtime D
 - `/register`, `/login`: secure account access, native forms plus HTMX
 - `/dashboard`: authenticated dashboard shell
 - `/accounts`: account setup, archived accounts, opening snapshots and ledger-backed balances
+- `/transactions`: income, expense, split and refund forms, category creation, searchable history
 - `GET /api/v1/ledger/balances`: authenticated, workspace-scoped balances in integer minor units
 - `GET /api/v1/ledger/journals`: authenticated, workspace-scoped immutable journal history
 - `/healthz` and `/readyz`: liveness and Group 7 database readiness
 
-Opening entries do **not** count as income or expense. Credit-card and loan opening balances are liabilities, not negative cash deposits. Each currency remains separate. The internal `ledger.Store` supports balanced adjustments, exactly-once posting and reversals; no generic public mutation endpoint exists yet. Domain-specific transaction interfaces arrive in Group 8.
+Opening entries do **not** count as income or expense. Refunds reverse classified expenses; they do not count as new income. Credit-card and loan opening balances are liabilities, not negative cash deposits. Each currency remains separate. The internal `ledger.Store` supports balanced adjustments, exactly-once posting and reversals; Group 8 transactions post alongside category allocations in one atomic operation. Transfers and reconciliation are Group 9. No generic public mutation endpoint is exposed.
 
-See [Group 7 accounting guarantees](docs/group-07-ledger.md), [Group 6 account semantics](docs/group-06-accounts.md), and [20-group roadmap](docs/roadmap.md).
+See [Group 8 transaction semantics](docs/group-08-transactions.md), [Group 7 accounting guarantees](docs/group-07-ledger.md), [Group 6 account semantics](docs/group-06-accounts.md), and [20-group roadmap](docs/roadmap.md).
 
 ## Verification
 

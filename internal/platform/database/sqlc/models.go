@@ -39,6 +39,42 @@ type AuthAttempt struct {
 	WindowStarted pgtype.Timestamptz `json:"window_started"`
 }
 
+type FinanceCategory struct {
+	ID              string             `json:"id"`
+	WorkspaceID     string             `json:"workspace_id"`
+	Name            string             `json:"name"`
+	Kind            string             `json:"kind"`
+	Currency        string             `json:"currency"`
+	LedgerAccountID string             `json:"ledger_account_id"`
+	ArchivedAt      pgtype.Timestamptz `json:"archived_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+type FinanceTransaction struct {
+	ID             string             `json:"id"`
+	WorkspaceID    string             `json:"workspace_id"`
+	AccountID      string             `json:"account_id"`
+	Currency       string             `json:"currency"`
+	Kind           string             `json:"kind"`
+	TotalMinor     int64              `json:"total_minor"`
+	JournalID      string             `json:"journal_id"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	RequestHash    []byte             `json:"request_hash"`
+	RefundOf       pgtype.Text        `json:"refund_of"`
+	Note           string             `json:"note"`
+	OccurredOn     pgtype.Date        `json:"occurred_on"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type FinanceTransactionSplit struct {
+	ID            int64  `json:"id"`
+	TransactionID string `json:"transaction_id"`
+	WorkspaceID   string `json:"workspace_id"`
+	Currency      string `json:"currency"`
+	CategoryID    string `json:"category_id"`
+	AmountMinor   int64  `json:"amount_minor"`
+}
+
 type LedgerAccount struct {
 	ID              string             `json:"id"`
 	WorkspaceID     string             `json:"workspace_id"`

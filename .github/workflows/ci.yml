@@ -77,7 +77,7 @@ jobs:
           test -z "$(git status --porcelain -- internal/platform/database/sqlc)"
 
   database-integration:
-    name: PostgreSQL 17 ledger integration
+    name: PostgreSQL 17 finance integration
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -114,21 +114,17 @@ jobs:
         run: go mod tidy -diff
       - name: Install pinned Goose
         run: go install github.com/pressly/goose/v3/cmd/goose@v3.29.0
-      - name: Apply migrations
+      - name: Validate empty migration rollback and reapply
         shell: bash
         run: |
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" up
-          "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" status
-      - name: Test database and UI forms
-        run: go test -tags=integration -count=1 ./tests/integration
-      - name: Validate migration down/up cycle
-        shell: bash
-        run: |
+          # Check rollback on an EMPTY finance database, before posting any money.
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" down
           TEST_MIGRATIONS_DOWN=1 go test -tags=integration -count=1 -run TestReadinessBeforeMigrations ./tests/integration
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" up
-          # Do not replay registration tests against unchanged rate-limit counters.
-          go test -tags=integration -count=1 -run TestDatabaseReadinessAndGeneratedQueries ./tests/integration
+          "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" status
+      - name: Test finance and browser integrations
+        run: go test -tags=integration -count=1 ./tests/integration
 
   node:
     name: Node 24 frontend and asset verification
