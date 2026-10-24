@@ -169,7 +169,9 @@ templ TransactionsContent(wallets []accounts.Account, categories []transactions.
 
 templ TransactionsFeedback(message string) {
  <div id="transaction-feedback" role="status" aria-live="polite" class="min-h-6 text-sm text-rose-600 dark:text-rose-300">
-  if message!="" { <p>{ message }</p> }
+  if message != "" {
+   <p>{ message }</p>
+  }
  </div>
 }
 
@@ -185,8 +187,12 @@ templ TransactionsList(records []transactions.Record, filter transactions.Filter
       <div class="min-w-0">
        <p class="font-medium">{ r.Categories }</p>
        <p class="mt-1 text-sm text-[var(--muted)]">{ r.AccountName } · { r.OccurredOn.Format("2006-01-02") } · { r.Kind }</p>
-       if r.Note!="" { <p class="mt-1 text-sm">{ r.Note }</p> }
-       if r.RefundOf!="" { <p class="mt-1 text-xs text-[var(--muted)]">Linked refund</p> }
+       if r.Note != "" {
+        <p class="mt-1 text-sm">{ r.Note }</p>
+       }
+       if r.RefundOf != "" {
+        <p class="mt-1 text-xs text-[var(--muted)]">Linked refund</p>
+       }
       </div>
       <p class="font-semibold tabular-nums">{ r.Currency } { accounts.FormatMinor(r.TotalMinor) }</p>
      </li>
