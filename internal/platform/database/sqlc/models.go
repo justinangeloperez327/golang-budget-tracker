@@ -139,23 +139,23 @@ type Session struct {
 }
 
 type TransferOperation struct {
-	ID               string             `json:"id"`
-	WorkspaceID      string             `json:"workspace_id"`
-	IdempotencyKey   string             `json:"idempotency_key"`
-	Fingerprint      []byte             `json:"fingerprint"`
-	SourceAccountID  string             `json:"source_account_id"`
-	TargetAccountID  string             `json:"target_account_id"`
-	SourceCurrency   string             `json:"source_currency"`
-	TargetCurrency   string             `json:"target_currency"`
-	SendMinor        int64              `json:"send_minor"`
-	ReceiveMinor     int64              `json:"receive_minor"`
-	FeeMinor         int64              `json:"fee_minor"`
-	RateUnits        pgtype.Int8        `json:"rate_units"`
-	Note             string             `json:"note"`
-	OccurredOn       pgtype.Date        `json:"occurred_on"`
-	SourceJournalID  string             `json:"source_journal_id"`
-	TargetJournalID  pgtype.Text        `json:"target_journal_id"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	ID              string             `json:"id"`
+	WorkspaceID     string             `json:"workspace_id"`
+	IdempotencyKey  string             `json:"idempotency_key"`
+	Fingerprint     []byte             `json:"fingerprint"`
+	SourceAccountID string             `json:"source_account_id"`
+	TargetAccountID string             `json:"target_account_id"`
+	SourceCurrency  string             `json:"source_currency"`
+	TargetCurrency  string             `json:"target_currency"`
+	SendMinor       int64              `json:"send_minor"`
+	ReceiveMinor    int64              `json:"receive_minor"`
+	FeeMinor        int64              `json:"fee_minor"`
+	RateUnits       pgtype.Int8        `json:"rate_units"`
+	Note            string             `json:"note"`
+	OccurredOn      pgtype.Date        `json:"occurred_on"`
+	SourceJournalID string             `json:"source_journal_id"`
+	TargetJournalID pgtype.Text        `json:"target_journal_id"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 }
 
 type User struct {
