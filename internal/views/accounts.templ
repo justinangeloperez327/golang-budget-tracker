@@ -18,6 +18,7 @@ templ AccountsContent(items []accounts.Account, csrf string, key string, message
 				<a href="/accounts" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Accounts & wallets</a>
 				<p class="px-4 pt-5 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Coming next</p>
 				<a href="/transactions" class="block rounded-lg px-4 py-2 text-sm font-medium hover:bg-[var(--soft)]">Transactions</a>
+					<a href="/transfers" class="block rounded-lg px-4 py-2 text-sm font-medium hover:bg-[var(--soft)]">Transfers & reconciliation</a>
 				<span class="block px-4 py-2 text-sm text-[var(--muted)]">Budgets & reports</span>
 			</nav>
 		</aside>
@@ -29,6 +30,7 @@ templ AccountsContent(items []accounts.Account, csrf string, key string, message
 						<a class="block rounded-lg px-3 py-2 text-sm" href="/dashboard">Dashboard</a>
 						<a class="block rounded-lg px-3 py-2 text-sm font-semibold text-blue-600" href="/accounts" aria-current="page">Accounts & wallets</a>
 						<a class="block rounded-lg px-3 py-2 text-sm" href="/transactions">Transactions</a>
+						<a class="block rounded-lg px-3 py-2 text-sm" href="/transfers">Transfers & reconciliation</a>
 					</nav>
 				</details>
 				<p class="text-sm font-semibold">Personal workspace</p>

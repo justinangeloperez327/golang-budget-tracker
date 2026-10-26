@@ -27,6 +27,22 @@ type AccountOpening struct {
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
+type AccountReconciliation struct {
+	ID             string             `json:"id"`
+	WorkspaceID    string             `json:"workspace_id"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	Fingerprint    []byte             `json:"fingerprint"`
+	AccountID      string             `json:"account_id"`
+	Currency       string             `json:"currency"`
+	PreviousMinor  int64              `json:"previous_minor"`
+	ObservedMinor  int64              `json:"observed_minor"`
+	DeltaMinor     int64              `json:"delta_minor"`
+	Note           string             `json:"note"`
+	OccurredOn     pgtype.Date        `json:"occurred_on"`
+	JournalID      pgtype.Text        `json:"journal_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type AppMetadatum struct {
 	Key       string             `json:"key"`
 	Value     string             `json:"value"`
@@ -120,6 +136,26 @@ type Session struct {
 	CsrfToken string             `json:"csrf_token"`
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type TransferOperation struct {
+	ID               string             `json:"id"`
+	WorkspaceID      string             `json:"workspace_id"`
+	IdempotencyKey   string             `json:"idempotency_key"`
+	Fingerprint      []byte             `json:"fingerprint"`
+	SourceAccountID  string             `json:"source_account_id"`
+	TargetAccountID  string             `json:"target_account_id"`
+	SourceCurrency   string             `json:"source_currency"`
+	TargetCurrency   string             `json:"target_currency"`
+	SendMinor        int64              `json:"send_minor"`
+	ReceiveMinor     int64              `json:"receive_minor"`
+	FeeMinor         int64              `json:"fee_minor"`
+	RateUnits        pgtype.Int8        `json:"rate_units"`
+	Note             string             `json:"note"`
+	OccurredOn       pgtype.Date        `json:"occurred_on"`
+	SourceJournalID  string             `json:"source_journal_id"`
+	TargetJournalID  pgtype.Text        `json:"target_journal_id"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type User struct {

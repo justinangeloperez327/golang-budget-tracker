@@ -1,0 +1,169 @@
+package views
+
+import (
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/transfers"
+)
+
+templ TransfersPage(wallets []accounts.Account, movements []transfers.Transfer, checks []transfers.Reconciliation, csrf string, transferKey string, reconcileKey string, date string, message string) {
+ @Document("Transfers & reconciliation", TransfersContent(wallets,movements,checks,csrf,transferKey,reconcileKey,date,message))
+}
+
+templ TransfersContent(wallets []accounts.Account, movements []transfers.Transfer, checks []transfers.Reconciliation, csrf string, transferKey string, reconcileKey string, date string, message string) {
+ <div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+  <aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+   <a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold"><span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span> Budget Tracker</a>
+   <nav aria-label="Main navigation" class="space-y-2">
+    <a href="/dashboard" class="block rounded-lg px-4 py-3 text-sm">Dashboard</a>
+    <a href="/accounts" class="block rounded-lg px-4 py-3 text-sm">Accounts & wallets</a>
+    <a href="/transactions" class="block rounded-lg px-4 py-3 text-sm">Transactions</a>
+    <a href="/transfers" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200" aria-current="page">Transfers & reconciliation</a>
+   </nav>
+  </aside>
+  <div class="min-w-0">
+   <header class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+    <details class="relative lg:hidden">
+     <summary class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm" aria-label="Open navigation">Menu</summary>
+     <nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+      <a href="/dashboard" class="block rounded-lg px-3 py-2 text-sm">Dashboard</a>
+      <a href="/accounts" class="block rounded-lg px-3 py-2 text-sm">Accounts & wallets</a>
+      <a href="/transactions" class="block rounded-lg px-3 py-2 text-sm">Transactions</a>
+      <a href="/transfers" class="block rounded-lg px-3 py-2 text-sm font-semibold">Transfers & reconciliation</a>
+     </nav>
+    </details>
+    <p class="font-semibold">Personal workspace</p>
+    <div class="flex items-center gap-2">
+     <button type="button" data-theme-toggle aria-label="Toggle dark mode" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Theme</button>
+     <form method="post" action="/logout"><input type="hidden" name="csrf_token" value={ csrf }/><button type="submit" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Sign out</button></form>
+    </div>
+   </header>
+   <main id="main" class="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Account movement · Group 9</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Transfers & reconciliation</h1>
+    <p class="mt-2 text-sm text-[var(--muted)]">Move money between accounts you own, repay a credit-card balance, or match a ledger balance to a statement. Internal transfers and card repayments are not expenses. Only fees are expenses.</p>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+     <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 class="text-lg font-semibold">Move money</h2>
+      <p class="mt-2 text-sm text-[var(--muted)]">For AED/PHP transfers, enter a rate and exact amount received. Rate is destination currency per 1 unit of source currency, rounded half-up to the smallest currency unit.</p>
+      <form action="/transfers" method="post" hx-post="/transfers" hx-target="#transfer-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="mt-5 space-y-4">
+       <input type="hidden" name="csrf_token" value={ csrf }/>
+       <input type="hidden" name="request_key" value={ transferKey }/>
+       <label class="block text-sm font-medium">From account
+        <select name="from_id" class="field mt-1" required>
+         <option value="">Select funding account</option>
+         for _, wallet:=range wallets {
+          if !wallet.Archived && wallet.Kind!="credit" && wallet.Kind!="loan" {
+           <option value={ wallet.ID }>{ wallet.Name } · { wallet.Currency }</option>
+          }
+         }
+        </select>
+       </label>
+       <label class="block text-sm font-medium">To account
+        <select name="to_id" class="field mt-1" required>
+         <option value="">Select receiving account</option>
+         for _, wallet:=range wallets {
+          if !wallet.Archived && wallet.Kind!="loan" {
+           <option value={ wallet.ID }>{ wallet.Name } · { wallet.Currency } · { accounts.KindLabel(wallet.Kind) }</option>
+          }
+         }
+        </select>
+       </label>
+       <label class="block text-sm font-medium">Amount sent (in source currency)
+        <input class="field mt-1" name="amount" required inputmode="decimal" placeholder="100.00" pattern="[0-9]{1,12}(\.[0-9]{1,2})?"/>
+       </label>
+       <label class="block text-sm font-medium">Transfer fee (source currency)
+        <input class="field mt-1" name="fee" inputmode="decimal" value="0.00" pattern="[0-9]{1,12}(\.[0-9]{1,2})?"/>
+       </label>
+       <label class="block text-sm font-medium">FX rate (only when currencies differ)
+        <input class="field mt-1" name="rate" inputmode="decimal" placeholder="e.g. 15.00000000" pattern="[0-9]{1,7}(\.[0-9]{1,8})?"/>
+       </label>
+       <label class="block text-sm font-medium">Amount received (FX only, destination currency)
+        <input class="field mt-1" name="received" inputmode="decimal" placeholder="e.g. 1500.00" pattern="[0-9]{1,12}(\.[0-9]{1,2})?"/>
+       </label>
+       <label class="block text-sm font-medium">Date <input type="date" class="field mt-1" name="occurred_on" value={ date } required/></label>
+       <label class="block text-sm font-medium">Note <input class="field mt-1" name="note" maxlength="500" placeholder="Optional reference"/></label>
+       @MovementFeedback(message)
+       <button class="btn-primary w-full" type="submit">Record transfer <span class="htmx-indicator">Saving…</span></button>
+      </form>
+     </section>
+     <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 class="text-lg font-semibold">Reconcile an account</h2>
+      <p class="mt-2 text-sm text-[var(--muted)]">Enter the actual amount held or owed on a statement. The difference posts to reconciliation equity, not to income or expenses.</p>
+      <form action="/reconciliations" method="post" hx-post="/reconciliations" hx-target="#transfer-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="mt-5 space-y-4">
+       <input type="hidden" name="csrf_token" value={ csrf }/>
+       <input type="hidden" name="request_key" value={ reconcileKey }/>
+       <label class="block text-sm font-medium">Account
+        <select name="account_id" class="field mt-1" required>
+         <option value="">Select an account</option>
+         for _, wallet:=range wallets {
+          if !wallet.Archived {
+           <option value={ wallet.ID }>{ wallet.Name } · { wallet.Currency } · ledger { accounts.FormatSignedMinor(wallet.LedgerMinor) }</option>
+          }
+         }
+        </select>
+       </label>
+       <label class="block text-sm font-medium">Statement amount
+        <input name="observed" class="field mt-1" inputmode="decimal" pattern="[0-9]{1,12}(\.[0-9]{1,2})?" placeholder="0.00" required/>
+       </label>
+       <p class="text-xs text-[var(--muted)]">Use the positive amount owed for cards or loans. Zero is allowed. This is not a category expense.</p>
+       <label class="block text-sm font-medium">Statement date <input type="date" name="occurred_on" class="field mt-1" value={ date } required/></label>
+       <label class="block text-sm font-medium">Explanation <input name="note" class="field mt-1" maxlength="500" placeholder="e.g. statement balance"/></label>
+       <button type="submit" class="btn-primary w-full">Save reconciliation <span class="htmx-indicator">Saving…</span></button>
+      </form>
+     </section>
+    </div>
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+     <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 class="text-lg font-semibold">Recent transfers</h2>
+      if len(movements)==0 {
+       <p class="mt-3 text-sm text-[var(--muted)]">No transfers recorded yet.</p>
+      } else {
+       <ul class="mt-4 divide-y divide-[var(--border)]">
+        for _, transfer:=range movements {
+         <li class="py-3">
+          <p class="font-medium">{ transfer.FromName } → { transfer.ToName }</p>
+          <p class="mt-1 text-sm tabular-nums">{ transfer.FromCurrency } { accounts.FormatMinor(transfer.SendMinor) } → { transfer.ToCurrency } { accounts.FormatMinor(transfer.ReceiveMinor) }</p>
+          if transfer.RateUnits>0 {
+           <p class="mt-1 text-xs text-[var(--muted)]">FX rate { transfers.RateText(transfer.RateUnits) }</p>
+          }
+          if transfer.FeeMinor>0 {
+           <p class="mt-1 text-xs text-[var(--muted)]">Fee: { transfer.FromCurrency } { accounts.FormatMinor(transfer.FeeMinor) }</p>
+          }
+          <p class="mt-1 text-xs text-[var(--muted)]">{ transfer.Date } · { transfer.Note }</p>
+         </li>
+        }
+       </ul>
+      }
+     </section>
+     <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 class="text-lg font-semibold">Reconciliation history</h2>
+      if len(checks)==0 {
+       <p class="mt-3 text-sm text-[var(--muted)]">No statements reconciled yet.</p>
+      } else {
+       <ul class="mt-4 divide-y divide-[var(--border)]">
+        for _, record:=range checks {
+         <li class="py-3">
+          <p class="font-medium">{ record.AccountName } · { record.Currency }</p>
+          <p class="mt-1 text-sm tabular-nums">{ accounts.FormatSignedMinor(record.BeforeMinor) } → { accounts.FormatMinor(record.ObservedMinor) }</p>
+          <p class="mt-1 text-xs text-[var(--muted)]">{ record.Date } · Adjustment { accounts.FormatSignedMinor(record.DeltaMinor) }</p>
+          if record.Note!="" {
+           <p class="mt-1 text-sm">{ record.Note }</p>
+          }
+         </li>
+        }
+       </ul>
+      }
+     </section>
+    </div>
+   </main>
+  </div>
+ </div>
+}
+
+templ MovementFeedback(message string) {
+ <div id="transfer-feedback" aria-live="polite" role="status" class="min-h-5 text-sm text-rose-600">
+  if message!="" {
+   <p>{ message }</p>
+  }
+ </div>
+}
