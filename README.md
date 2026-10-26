@@ -2,7 +2,7 @@
 
 A modular Go personal finance tracker: **Go 1.27.3**, Chi, templ + HTMX + Tailwind CSS 4, PostgreSQL 17 and Node.js 24 for assets. See the [finalized 20-group roadmap](docs/roadmap.md).
 
-**Group 9 — Internal transfers and reconciliation.** Move money between AED/PHP accounts with currency-specific balanced ledger journals, explicit exchange rates and fees, repay credit cards without double-counting expenses, and reconcile actual statement balances through immutable equity adjustments. Group 8 income/expense/refund functionality remains available.
+**Group 10 — Monthly budgets.** Create category allocations and positive rollover policies for each AED or PHP month. Track refund-aware actual expenses, available balances and overspending, derived directly from immutable transaction splits. Prior accounts, transfers, credit card repayments and reconciliation remain available.
 
 ## Run locally
 
@@ -23,14 +23,15 @@ Production: require HTTPS, correct `PUBLIC_ORIGIN`, separate migration/runtime D
 - `/dashboard`: authenticated dashboard shell
 - `/accounts`: account setup, archived accounts, opening snapshots and ledger-backed balances
 - `/transactions`: income, expense, split and refund forms, category creation, searchable history
-- `/transfers`: own-account transfers, AED/PHP FX settlements, transfer-fee records, card repayment and statement reconciliation
+- `/transfers`: own-account transfers, AED/PHP FX settlements, transfer fees, card repayment and reconciliation
+- `/budgets`: monthly AED/PHP category allocations, refund-aware actuals, rollovers and overspending
 - `GET /api/v1/ledger/balances`: authenticated, workspace-scoped balances in integer minor units
 - `GET /api/v1/ledger/journals`: authenticated, workspace-scoped immutable journal history
 - `/healthz` and `/readyz`: liveness and Group 7 database readiness
 
 Opening entries do **not** count as income or expense. Refunds reverse classified expenses; they do not count as new income. Credit-card and loan opening balances are liabilities, not negative cash deposits. Each currency remains separate. The internal `ledger.Store` supports balanced adjustments, exactly-once posting and reversals; Group 8 transactions post alongside category allocations in one atomic operation. Internal transfers and reconciliation are implemented in Group 9. No generic public mutation endpoint is exposed.
 
-See [Group 9 transfers/reconciliation semantics](docs/group-09-transfers.md), [Group 8 transaction semantics](docs/group-08-transactions.md), [Group 7 accounting guarantees](docs/group-07-ledger.md), [Group 6 account semantics](docs/group-06-accounts.md), and [20-group roadmap](docs/roadmap.md).
+See [Group 10 monthly budget semantics](docs/group-10-budgets.md), [Group 9 transfers/reconciliation semantics](docs/group-09-transfers.md), [Group 8 transaction semantics](docs/group-08-transactions.md), [Group 7 accounting guarantees](docs/group-07-ledger.md), [Group 6 account semantics](docs/group-06-accounts.md), and [20-group roadmap](docs/roadmap.md).
 
 ## Verification
 
@@ -48,4 +49,4 @@ docker compose config --quiet
 docker build -t golang-budget-tracker:local .
 ```
 
-The PostgreSQL 17 GitHub Actions job runs the isolated integration suite, including transfers, exchange rates, credit-card repayments, concurrency, reconciliation and database-trigger checks. CI never creates a pull request, publishes a release or deploys automatically.
+The PostgreSQL 17 GitHub Actions job runs the isolated integration suite, including category allocations, refund-aware budget actuals, AED/PHP isolation, rollover, idempotency, CSRF, immutable history and database-trigger checks. CI never creates a pull request, publishes a release or deploys automatically.

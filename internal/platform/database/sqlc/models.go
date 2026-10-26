@@ -130,6 +130,21 @@ type LedgerOpeningImport struct {
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
+type MonthlyBudgetEvent struct {
+	ID             string             `json:"id"`
+	WorkspaceID    string             `json:"workspace_id"`
+	Currency       string             `json:"currency"`
+	BudgetMonth    pgtype.Date        `json:"budget_month"`
+	Action         string             `json:"action"`
+	CategoryID     pgtype.Text        `json:"category_id"`
+	CategoryKind   string             `json:"category_kind"`
+	AmountMinor    pgtype.Int8        `json:"amount_minor"`
+	RolloverPolicy pgtype.Text        `json:"rollover_policy"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	Fingerprint    []byte             `json:"fingerprint"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Session struct {
 	TokenHash []byte             `json:"token_hash"`
 	UserID    string             `json:"user_id"`
