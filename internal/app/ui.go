@@ -178,6 +178,7 @@ func registerUI(r chi.Router, store *auth.Store, cfg config.Auth, logger *slog.L
 	registerTransactionsUI(r, store, cfg, logger)
 	registerTransfersUI(r, store, cfg, logger)
 	registerBudgetsUI(r, store, cfg, logger)
+	registerRecurringUI(r, store, cfg, logger)
 }
 
 func authMessage(mode string, err error) (string, int) {

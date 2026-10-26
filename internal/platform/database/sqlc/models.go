@@ -145,6 +145,38 @@ type MonthlyBudgetEvent struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type RecurringOccurrenceAction struct {
+	ID                   string             `json:"id"`
+	WorkspaceID          string             `json:"workspace_id"`
+	ScheduleID           string             `json:"schedule_id"`
+	Currency             string             `json:"currency"`
+	DueOn                pgtype.Date        `json:"due_on"`
+	Action               string             `json:"action"`
+	ExpenseTransactionID pgtype.Text        `json:"expense_transaction_id"`
+	IdempotencyKey       string             `json:"idempotency_key"`
+	Fingerprint          []byte             `json:"fingerprint"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+type RecurringSchedule struct {
+	ID             string             `json:"id"`
+	WorkspaceID    string             `json:"workspace_id"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	Fingerprint    []byte             `json:"fingerprint"`
+	Name           string             `json:"name"`
+	Kind           string             `json:"kind"`
+	Currency       string             `json:"currency"`
+	AccountID      string             `json:"account_id"`
+	CategoryID     string             `json:"category_id"`
+	CategoryKind   string             `json:"category_kind"`
+	AmountMinor    int64              `json:"amount_minor"`
+	Frequency      string             `json:"frequency"`
+	StartOn        pgtype.Date        `json:"start_on"`
+	EndOn          pgtype.Date        `json:"end_on"`
+	ArchivedAt     pgtype.Timestamptz `json:"archived_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Session struct {
 	TokenHash []byte             `json:"token_hash"`
 	UserID    string             `json:"user_id"`

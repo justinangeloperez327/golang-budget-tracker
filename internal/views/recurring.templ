@@ -1,0 +1,215 @@
+package views
+
+import (
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/recurring"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/transactions"
+)
+
+templ RecurringPage(schedules []recurring.Schedule, occurrences []recurring.Occurrence, payments []recurring.Payment, wallets []accounts.Account, categories []transactions.Category, expenses []transactions.Record, csrf, key, today, message string) {
+ @Document("Bills and subscriptions", RecurringContent(schedules,occurrences,payments,wallets,categories,expenses,csrf,key,today,message))
+}
+
+templ RecurringContent(schedules []recurring.Schedule,occurrences []recurring.Occurrence,payments []recurring.Payment,wallets []accounts.Account,categories []transactions.Category,expenses []transactions.Record,csrf,key,today,message string) {
+ <div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+  <aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+   <a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold"><span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span> Budget Tracker</a>
+   <nav aria-label="Main navigation" class="space-y-2">
+    <a href="/dashboard" class="block rounded-lg px-4 py-3 text-sm">Dashboard</a>
+    <a href="/accounts" class="block rounded-lg px-4 py-3 text-sm">Accounts & wallets</a>
+    <a href="/transactions" class="block rounded-lg px-4 py-3 text-sm">Transactions</a>
+    <a href="/transfers" class="block rounded-lg px-4 py-3 text-sm">Transfers & reconciliation</a>
+    <a href="/budgets" class="block rounded-lg px-4 py-3 text-sm">Monthly budgets</a>
+    <a href="/recurring" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Bills & subscriptions</a>
+   </nav>
+  </aside>
+  <div class="min-w-0">
+   <header class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+    <details class="relative lg:hidden">
+     <summary class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm" aria-label="Open navigation">Menu</summary>
+     <nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-64 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/dashboard">Dashboard</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/accounts">Accounts & wallets</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transactions">Transactions</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transfers">Transfers</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/budgets">Budgets</a>
+      <a class="block rounded-lg px-3 py-2 text-sm font-semibold" href="/recurring">Bills & subscriptions</a>
+     </nav>
+    </details>
+    <p class="font-semibold">Personal workspace</p>
+    <div class="flex items-center gap-2">
+     <button type="button" data-theme-toggle aria-label="Toggle dark mode" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Theme</button>
+     <form method="post" action="/logout"><input type="hidden" name="csrf_token" value={csrf}/><button type="submit" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Sign out</button></form>
+    </div>
+   </header>
+   <main id="main" class="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Planning · Group 11</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Bills & subscriptions</h1>
+    <p class="mt-2 text-sm text-[var(--muted)]">Schedules do not move money. Record an actual expense in Transactions, then link it to a due bill as paid. Skipping a bill also creates no expense.</p>
+    <div class="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+     <div class="space-y-6">
+      @RecurringOccurrences(occurrences,expenses,csrf)
+      <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+       <h2 class="text-lg font-semibold">Your recurring schedules</h2>
+       if len(schedules)==0{
+        <p class="mt-3 text-sm text-[var(--muted)]">No recurring schedules yet.</p>
+       } else {
+        <ul class="mt-3 divide-y divide-[var(--border)]">
+         for _,s:=range schedules{
+          <li class="flex flex-wrap items-start justify-between gap-3 py-4">
+           <div>
+            <p class="font-semibold">{s.Name}</p>
+            <p class="mt-1 text-sm text-[var(--muted)]">{s.Kind} · {s.Frequency} · {s.Currency} {accounts.FormatMinor(s.AmountMinor)}</p>
+            <p class="mt-1 text-xs text-[var(--muted)]">{s.AccountName} · {s.CategoryName} · starts {s.StartOn}</p>
+            if s.Archived{
+             <p class="mt-1 text-xs text-[var(--muted)]">Archived — no more occurrences</p>
+            }
+           </div>
+           if !s.Archived{
+            <form method="post" action={"/recurring/"+s.ID+"/archive"}>
+             <input type="hidden" name="csrf_token" value={csrf}/>
+             <button type="submit" class="rounded-lg border border-[var(--border)] px-3 py-2 text-xs">Archive</button>
+            </form>
+           }
+          </li>
+         }
+        </ul>
+       }
+      </section>
+      <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+       <h2 class="text-lg font-semibold">Payment & skip history</h2>
+       if len(payments)==0{
+        <p class="mt-3 text-sm text-[var(--muted)]">No payments or skipped occurrences recorded.</p>
+       }else{
+        <ul class="mt-3 divide-y divide-[var(--border)]">
+         for _,p:=range payments{
+          <li class="py-3 text-sm">
+           <p class="font-medium">{p.ScheduleName} · {p.Action}</p>
+           <p class="mt-1 text-[var(--muted)]">{p.DueOn} · {p.Currency} {accounts.FormatMinor(p.AmountMinor)}</p>
+          </li>
+         }
+        </ul>
+       }
+      </section>
+     </div>
+     <section class="self-start rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 class="text-lg font-semibold">New recurring schedule</h2>
+      <form method="post" action="/recurring" hx-post="/recurring" hx-target="#recurring-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="mt-5 space-y-4">
+       <input type="hidden" name="csrf_token" value={csrf}/>
+       <input type="hidden" name="request_key" value={key}/>
+       <label class="block text-sm font-medium">Name
+        <input name="name" class="field mt-1" required maxlength="100" placeholder="e.g. Apartment rent"/>
+       </label>
+       <label class="block text-sm font-medium">Type
+        <select name="kind" class="field mt-1"><option value="bill">Bill</option><option value="subscription">Subscription</option></select>
+       </label>
+       <label class="block text-sm font-medium">Funding account
+        <select name="account_id" class="field mt-1" required>
+         <option value="">Select account</option>
+         for _,w:=range wallets{
+          if !w.Archived && w.Kind!="loan"{
+           <option value={w.ID}>{w.Name} · {w.Currency}</option>
+          }
+         }
+        </select>
+       </label>
+       <label class="block text-sm font-medium">Expense category
+        <select name="category_id" class="field mt-1" required>
+         <option value="">Select expense category</option>
+         for _,c:=range categories{
+          if c.Kind=="expense" && !c.Archived{
+           <option value={c.ID}>{c.Name} · {c.Currency}</option>
+          }
+         }
+        </select>
+       </label>
+       <label class="block text-sm font-medium">Currency
+        <select name="currency" class="field mt-1"><option value="AED">AED</option><option value="PHP">PHP</option></select>
+       </label>
+       <label class="block text-sm font-medium">Expected amount
+        <input name="amount" class="field mt-1" required inputmode="decimal" pattern="[0-9]{1,12}(\.[0-9]{1,2})?" placeholder="250.00"/>
+       </label>
+       <label class="block text-sm font-medium">Frequency
+        <select name="frequency" class="field mt-1">
+         <option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="daily">Daily</option>
+         <option value="quarterly">Quarterly</option><option value="yearly">Yearly</option>
+        </select>
+       </label>
+       <label class="block text-sm font-medium">First due date
+        <input type="date" name="start_on" value={today} required class="field mt-1" min="2000-01-01" max="2100-12-31"/>
+       </label>
+       <label class="block text-sm font-medium">Last due date (optional)
+        <input type="date" name="end_on" class="field mt-1" min="2000-01-01" max="2100-12-31"/>
+       </label>
+       @RecurringFeedback(message)
+       <button type="submit" class="btn-primary w-full">Create schedule <span class="htmx-indicator">Saving…</span></button>
+      </form>
+     </section>
+    </div>
+   </main>
+  </div>
+ </div>
+}
+
+templ RecurringFeedback(message string){
+ <div id="recurring-feedback" role="status" aria-live="polite" class="min-h-6 text-sm text-rose-600">
+  if message!=""{
+   <p>{message}</p>
+  }
+ </div>
+}
+
+templ RecurringOccurrences(occurrences []recurring.Occurrence,expenses []transactions.Record,csrf string){
+ <section id="recurring-occurrences" aria-live="polite" class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+  <h2 class="text-lg font-semibold">Due, overdue & upcoming</h2>
+  <p class="mt-1 text-xs text-[var(--muted)]">Showing 30 days back and 90 days ahead. Only paid or skipped items are marked settled.</p>
+  if len(occurrences)==0{
+   <p class="mt-4 text-sm text-[var(--muted)]">No due occurrences in this period.</p>
+  }else{
+   <ul class="mt-4 divide-y divide-[var(--border)]">
+    for _,o:=range occurrences{
+     <li class="py-4">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+       <div>
+        <p class="font-medium">{o.ScheduleName}</p>
+        <p class="mt-1 text-sm text-[var(--muted)]">{o.DueOn} · {o.AccountName} · {o.CategoryName}</p>
+        <p class="mt-1 text-xs font-semibold">{o.Status}</p>
+       </div>
+       <p class="font-semibold tabular-nums">{o.Currency} {accounts.FormatMinor(o.AmountMinor)}</p>
+      </div>
+      if o.Status!="paid" && o.Status!="skipped"{
+       <div class="mt-3 grid gap-2">
+        <form action="/recurring/record" method="post" class="flex flex-wrap items-end gap-2" hx-post="/recurring/record" hx-target="#recurring-feedback" hx-swap="outerHTML">
+         <input name="csrf_token" type="hidden" value={csrf}/>
+         <input name="request_key" type="hidden" value={o.PayKey}/>
+         <input name="schedule_id" type="hidden" value={o.ScheduleID}/>
+         <input name="due_on" type="hidden" value={o.DueOn}/>
+         <input name="action" type="hidden" value="paid"/>
+         <label class="min-w-[180px] flex-1 text-xs">Link a matching expense
+          <select name="transaction_id" class="field mt-1" required>
+           <option value="">Select recorded expense</option>
+           for _,e:=range expenses{
+            if e.Kind=="expense" && e.Currency==o.Currency{
+             <option value={e.ID}>{e.OccurredOn.Format("2006-01-02")} · {e.AccountName} · {e.Currency} {accounts.FormatMinor(e.TotalMinor)}</option>
+            }
+           }
+          </select>
+         </label>
+         <button class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium" type="submit">Mark paid</button>
+        </form>
+        <form action="/recurring/record" method="post">
+         <input name="csrf_token" type="hidden" value={csrf}/>
+         <input name="request_key" type="hidden" value={o.SkipKey}/>
+         <input name="schedule_id" type="hidden" value={o.ScheduleID}/>
+         <input name="due_on" type="hidden" value={o.DueOn}/>
+         <input name="action" type="hidden" value="skipped"/>
+         <button class="text-xs text-[var(--muted)] underline" type="submit">Skip this occurrence</button>
+        </form>
+       </div>
+      }
+     </li>
+    }
+   </ul>
+  }
+ </section>
+}
