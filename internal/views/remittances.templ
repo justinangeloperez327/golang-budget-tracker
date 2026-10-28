@@ -166,6 +166,8 @@ templ RemittancesContent(orders []remittances.Order, wallets []accounts.Account,
 }
 templ RemittanceFeedback(message string){
  <div id="remittance-feedback" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-rose-600">
-  if message!="" {<p>{message}</p>}
+  if message!="" {
+   <p>{message}</p>
+  }
  </div>
 }
