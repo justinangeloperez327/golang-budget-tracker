@@ -1,0 +1,216 @@
+package views
+
+import (
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/contributions"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/transactions"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/transfers"
+)
+
+templ ContributionsPage(obligations []contributions.Obligation, history []contributions.Resolution, categories []transactions.Category, wallets []accounts.Account, expenses []transactions.Record, transfersList []transfers.Transfer, csrf, newKey, today, month, message string) {
+ @Document("Philippine contributions", ContributionsContent(obligations,history,categories,wallets,expenses,transfersList,csrf,newKey,today,month,message))
+}
+templ ContributionsContent(obligations []contributions.Obligation, history []contributions.Resolution, categories []transactions.Category, wallets []accounts.Account, expenses []transactions.Record, transfersList []transfers.Transfer, csrf, newKey, today, month, message string) {
+ <div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+  <aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+   <a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold"><span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span> Budget Tracker</a>
+   <nav aria-label="Main navigation" class="space-y-2">
+    <a href="/dashboard" class="block rounded-lg px-4 py-3 text-sm">Dashboard</a>
+    <a href="/accounts" class="block rounded-lg px-4 py-3 text-sm">Accounts & wallets</a>
+    <a href="/transactions" class="block rounded-lg px-4 py-3 text-sm">Transactions</a>
+    <a href="/transfers" class="block rounded-lg px-4 py-3 text-sm">Transfers & reconciliation</a>
+    <a href="/budgets" class="block rounded-lg px-4 py-3 text-sm">Monthly budgets</a>
+    <a href="/recurring" class="block rounded-lg px-4 py-3 text-sm">Bills & subscriptions</a>
+    <a href="/debts" class="block rounded-lg px-4 py-3 text-sm">Debts & installments</a>
+    <a href="/savings" class="block rounded-lg px-4 py-3 text-sm">Savings goals</a>
+    <a href="/remittances" class="block rounded-lg px-4 py-3 text-sm">Remittances</a>
+    <a href="/contributions" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">PH contributions</a>
+   </nav>
+  </aside>
+  <div class="min-w-0">
+   <header class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+    <details class="relative lg:hidden">
+     <summary class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm" aria-label="Open navigation">Menu</summary>
+     <nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-64 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/dashboard">Dashboard</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/accounts">Accounts</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transactions">Transactions</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transfers">Transfers</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/budgets">Budgets</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/recurring">Bills</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/debts">Debts</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/savings">Savings</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/remittances">Remittances</a>
+      <a class="block rounded-lg px-3 py-2 text-sm font-semibold" href="/contributions">PH contributions</a>
+     </nav>
+    </details>
+    <p class="font-semibold">Personal workspace</p>
+    <div class="flex items-center gap-2">
+     <button type="button" data-theme-toggle aria-label="Toggle dark mode" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Theme</button>
+     <form method="post" action="/logout"><input type="hidden" name="csrf_token" value={csrf}/><button type="submit" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Sign out</button></form>
+    </div>
+   </header>
+   <main id="main" class="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Philippine contributions · Group 15</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">SSS, PhilHealth & Pag-IBIG</h1>
+    <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">Track manually entered PHP contributions by month and payment status. Creating an obligation or marking it skipped does not move money. Paid SSS, PhilHealth and regular Pag-IBIG require a matching existing expense; MP2 requires an existing PHP transfer into savings.</p>
+    @ContributionFeedback(message)
+    <div class="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1fr)_350px]">
+     <div class="space-y-6">
+      <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+       <h2 class="text-lg font-semibold">Contribution periods</h2>
+       if len(obligations)==0 {
+        <p class="mt-3 text-sm text-[var(--muted)]">No contribution obligations recorded yet.</p>
+       } else {
+        <ul class="mt-3 divide-y divide-[var(--border)]">
+         for _,o:=range obligations{
+          <li class="py-5">
+           <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+             <p class="font-semibold">{o.SchemeLabel} · {o.Period}</p>
+             <p class="mt-1 text-xs text-[var(--muted)]">
+              if o.DueOn!="" {
+               <span>Due {o.DueOn} · </span>
+              }
+              <span>{o.Status}</span>
+             </p>
+             if o.Scheme=="mp2"{
+              <p class="mt-1 text-xs text-[var(--muted)]">Savings destination: {o.MP2AccountName}</p>
+             } else {
+              <p class="mt-1 text-xs text-[var(--muted)]">Expense category: {o.CategoryName}</p>
+             }
+            </div>
+            <p class="font-semibold tabular-nums">PHP {accounts.FormatMinor(o.AmountMinor)}</p>
+           </div>
+           if o.Note!="" {
+            <p class="mt-2 text-sm">{o.Note}</p>
+           }
+           if o.Status!="paid" && o.Status!="skipped" {
+            <div class="mt-3 grid gap-2">
+             <form action="/contributions/resolve" method="post" hx-post="/contributions/resolve" hx-target="#contribution-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="flex flex-wrap items-end gap-2">
+              <input name="csrf_token" type="hidden" value={csrf}/>
+              <input name="request_key" type="hidden" value={o.PayKey}/>
+              <input name="obligation_id" type="hidden" value={o.ID}/>
+              <input name="action" type="hidden" value="paid"/>
+              <input name="resolved_on" type="hidden" value={today}/>
+              if o.Scheme=="mp2"{
+               <label class="min-w-[210px] flex-1 text-xs">Link existing PHP savings transfer
+                <select name="transfer_id" class="field mt-1" required>
+                 <option value="">Select transfer</option>
+                 for _,t:=range transfersList{
+                  if t.FromCurrency=="PHP"&&t.ToCurrency=="PHP"&&t.FeeMinor==0{
+                   <option value={t.ID}>{t.Date} · {t.FromName} → {t.ToName} · PHP {accounts.FormatMinor(t.SendMinor)}</option>
+                  }
+                 }
+                </select>
+               </label>
+              }else{
+               <label class="min-w-[210px] flex-1 text-xs">Link existing PHP expense
+                <select name="expense_id" class="field mt-1" required>
+                 <option value="">Select expense</option>
+                 for _,e:=range expenses{
+                  if e.Kind=="expense"&&e.Currency=="PHP"{
+                   <option value={e.ID}>{e.OccurredOn.Format("2006-01-02")} · {e.Categories} · PHP {accounts.FormatMinor(e.TotalMinor)}</option>
+                  }
+                 }
+                </select>
+               </label>
+              }
+              <button type="submit" class="btn-primary">Mark paid <span class="htmx-indicator">Saving…</span></button>
+             </form>
+             <form action="/contributions/resolve" method="post">
+              <input name="csrf_token" type="hidden" value={csrf}/>
+              <input name="request_key" type="hidden" value={o.SkipKey}/>
+              <input name="obligation_id" type="hidden" value={o.ID}/>
+              <input name="resolved_on" type="hidden" value={today}/>
+              <input name="action" type="hidden" value="skipped"/>
+              <button class="text-xs text-[var(--muted)] underline" type="submit">Skip period</button>
+             </form>
+            </div>
+           }
+          </li>
+         }
+        </ul>
+       }
+      </section>
+      <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+       <h2 class="text-lg font-semibold">Payment & skip history</h2>
+       if len(history)==0{
+        <p class="mt-3 text-sm text-[var(--muted)]">No periods marked paid or skipped.</p>
+       }else{
+        <ul class="mt-3 divide-y divide-[var(--border)]">
+         for _,h:=range history{
+          <li class="flex flex-wrap items-start justify-between gap-3 py-3">
+           <div>
+            <p class="text-sm font-semibold">{contributions.SchemeLabel(h.Scheme)} · {h.Period} · {h.Action}</p>
+            <p class="mt-1 text-xs text-[var(--muted)]">{h.ResolvedOn}</p>
+           </div>
+           <p class="text-sm font-semibold tabular-nums">PHP {accounts.FormatMinor(h.AmountMinor)}</p>
+          </li>
+         }
+        </ul>
+       }
+      </section>
+     </div>
+     <section class="self-start rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 class="text-lg font-semibold">New contribution obligation</h2>
+      <p class="mt-2 text-xs text-[var(--muted)]">Enter the amount from your applicable official contribution statement. This app does not calculate legally required rates or deadlines.</p>
+      <form action="/contributions" method="post" hx-post="/contributions" hx-target="#contribution-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="mt-5 space-y-4">
+       <input name="csrf_token" type="hidden" value={csrf}/>
+       <input name="request_key" type="hidden" value={newKey}/>
+       <label class="block text-sm font-medium">Contribution scheme
+        <select name="scheme" class="field mt-1" required>
+         <option value="sss">SSS</option>
+         <option value="philhealth">PhilHealth</option>
+         <option value="pagibig">Pag-IBIG regular</option>
+         <option value="mp2">Pag-IBIG MP2 savings</option>
+        </select>
+       </label>
+       <label class="block text-sm font-medium">Contribution month
+        <input name="period" type="month" value={month} min="2000-01" max="2100-12" class="field mt-1" required/>
+       </label>
+       <label class="block text-sm font-medium">Due date (optional)
+        <input name="due_on" type="date" min="2000-01-01" max="2100-12-31" class="field mt-1"/>
+       </label>
+       <label class="block text-sm font-medium">Amount · PHP
+        <input name="amount" inputmode="decimal" class="field mt-1" pattern="[0-9]{1,12}(\.[0-9]{1,2})?" placeholder="750.00" required/>
+       </label>
+       <label class="block text-sm font-medium">PHP expense category (SSS, PhilHealth, Pag-IBIG)
+        <select name="expense_category_id" class="field mt-1">
+         <option value="">Select for regular contributions</option>
+         for _,c:=range categories{
+          if c.Currency=="PHP"&&c.Kind=="expense"&&!c.Archived{
+           <option value={c.ID}>{c.Name} · PHP</option>
+          }
+         }
+        </select>
+       </label>
+       <label class="block text-sm font-medium">PHP savings account (MP2 only)
+        <select name="mp2_account_id" class="field mt-1">
+         <option value="">Select for MP2</option>
+         for _,a:=range wallets{
+          if a.Kind=="savings"&&a.Currency=="PHP"&&!a.Archived{
+           <option value={a.ID}>{a.Name} · PHP</option>
+          }
+         }
+        </select>
+       </label>
+       <p class="text-xs text-[var(--muted)]">Complete only the category field for regular schemes, or only the savings-account field for MP2.</p>
+       <label class="block text-sm font-medium">Note (optional)
+        <input name="note" maxlength="500" class="field mt-1" placeholder="Reference or coverage detail"/>
+       </label>
+       <button class="btn-primary w-full" type="submit">Create PHP obligation <span class="htmx-indicator">Saving…</span></button>
+      </form>
+     </section>
+    </div>
+   </main>
+  </div>
+ </div>
+}
+templ ContributionFeedback(message string){
+ <div id="contribution-feedback" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-rose-600">
+  if message!=""{
+   <p>{message}</p>
+  }
+ </div>
+}

@@ -55,6 +55,37 @@ type AuthAttempt struct {
 	WindowStarted pgtype.Timestamptz `json:"window_started"`
 }
 
+type ContributionObligation struct {
+	ID                  string             `json:"id"`
+	WorkspaceID         string             `json:"workspace_id"`
+	Currency            string             `json:"currency"`
+	Scheme              string             `json:"scheme"`
+	PeriodOn            pgtype.Date        `json:"period_on"`
+	DueOn               pgtype.Date        `json:"due_on"`
+	AmountMinor         int64              `json:"amount_minor"`
+	ExpenseCategoryID   pgtype.Text        `json:"expense_category_id"`
+	Mp2SavingsAccountID pgtype.Text        `json:"mp2_savings_account_id"`
+	Note                string             `json:"note"`
+	IdempotencyKey      string             `json:"idempotency_key"`
+	Fingerprint         []byte             `json:"fingerprint"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+}
+
+type ContributionResolution struct {
+	ID                   string             `json:"id"`
+	WorkspaceID          string             `json:"workspace_id"`
+	ObligationID         string             `json:"obligation_id"`
+	Currency             string             `json:"currency"`
+	Action               string             `json:"action"`
+	ExpenseTransactionID pgtype.Text        `json:"expense_transaction_id"`
+	TransferID           pgtype.Text        `json:"transfer_id"`
+	ResolvedOn           pgtype.Date        `json:"resolved_on"`
+	Note                 string             `json:"note"`
+	IdempotencyKey       string             `json:"idempotency_key"`
+	Fingerprint          []byte             `json:"fingerprint"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
 type DebtInstallment struct {
 	ID                string      `json:"id"`
 	WorkspaceID       string      `json:"workspace_id"`
