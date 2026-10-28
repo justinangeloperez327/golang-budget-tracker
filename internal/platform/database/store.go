@@ -53,7 +53,7 @@ func (s *Store) Close() {
 
 func (s *Store) Pool() *pgxpool.Pool { return s.pool }
 
-// Ready requires a working database connection and Group 11 migration marker.
+// Ready requires a working database connection and Group 12 migration marker.
 // It intentionally does not apply migrations or expose connection details.
 func (s *Store) Ready(ctx context.Context) error {
 	if s == nil || s.pool == nil {
@@ -65,7 +65,7 @@ func (s *Store) Ready(ctx context.Context) error {
 		return ErrNotReady
 	}
 	marker, err := sqlc.New(s.pool).GetSchemaMarker(checkCtx)
-	if err != nil || marker != "group11" {
+	if err != nil || marker != "group12" {
 		return ErrNotReady
 	}
 	return nil

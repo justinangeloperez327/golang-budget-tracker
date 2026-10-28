@@ -55,6 +55,52 @@ type AuthAttempt struct {
 	WindowStarted pgtype.Timestamptz `json:"window_started"`
 }
 
+type DebtInstallment struct {
+	ID                string      `json:"id"`
+	WorkspaceID       string      `json:"workspace_id"`
+	PlanID            string      `json:"plan_id"`
+	Currency          string      `json:"currency"`
+	InstallmentNumber int16       `json:"installment_number"`
+	DueOn             pgtype.Date `json:"due_on"`
+	PrincipalMinor    int64       `json:"principal_minor"`
+	InterestMinor     int64       `json:"interest_minor"`
+	AmountMinor       int64       `json:"amount_minor"`
+}
+
+type DebtPayment struct {
+	ID               string             `json:"id"`
+	WorkspaceID      string             `json:"workspace_id"`
+	PlanID           string             `json:"plan_id"`
+	InstallmentID    string             `json:"installment_id"`
+	Currency         string             `json:"currency"`
+	FundingAccountID string             `json:"funding_account_id"`
+	LoanAccountID    string             `json:"loan_account_id"`
+	PrincipalMinor   int64              `json:"principal_minor"`
+	InterestMinor    int64              `json:"interest_minor"`
+	AmountMinor      int64              `json:"amount_minor"`
+	JournalID        string             `json:"journal_id"`
+	PaidOn           pgtype.Date        `json:"paid_on"`
+	IdempotencyKey   string             `json:"idempotency_key"`
+	Fingerprint      []byte             `json:"fingerprint"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type DebtPlan struct {
+	ID               string             `json:"id"`
+	WorkspaceID      string             `json:"workspace_id"`
+	Currency         string             `json:"currency"`
+	Name             string             `json:"name"`
+	LoanAccountID    string             `json:"loan_account_id"`
+	FundingAccountID string             `json:"funding_account_id"`
+	PrincipalMinor   int64              `json:"principal_minor"`
+	AnnualRateBps    int32              `json:"annual_rate_bps"`
+	Installments     int16              `json:"installments"`
+	FirstDueOn       pgtype.Date        `json:"first_due_on"`
+	IdempotencyKey   string             `json:"idempotency_key"`
+	Fingerprint      []byte             `json:"fingerprint"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
 type FinanceCategory struct {
 	ID              string             `json:"id"`
 	WorkspaceID     string             `json:"workspace_id"`
