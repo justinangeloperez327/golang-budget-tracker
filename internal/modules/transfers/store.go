@@ -116,6 +116,18 @@ func post(ctx context.Context, tx pgx.Tx, workspace, currency, key string, lines
 // Transfer posts an internal movement without creating income/expense except
 // an explicit fee. FX uses two balanced, currency-local clearing journals.
 func (s *Store) Transfer(ctx context.Context, workspace string, input Input) (string, error) {
+ var id string
+ err := pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
+  var e error
+  id, e = s.TransferTx(ctx, tx, workspace, input)
+  return e
+ })
+ return id, err
+}
+
+// TransferTx reuses the Group 9 settlement inside a caller-owned transaction.
+// The caller controls commit so linked remittance metadata cannot drift.
+func (s *Store) TransferTx(ctx context.Context, tx pgx.Tx, workspace string, input Input) (string, error) {
 	if !accounts.IsValidKey(workspace) {
 		return "", ErrInvalid
 	}
@@ -124,7 +136,7 @@ func (s *Store) Transfer(ctx context.Context, workspace string, input Input) (st
 		return "", err
 	}
 	var id string
-	err = pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
+	err = func(tx pgx.Tx) error {
 		if err := lockKey(ctx, tx, workspace, "transfer:"+n.Key); err != nil {
 			return err
 		}
@@ -204,7 +216,7 @@ func (s *Store) Transfer(ctx context.Context, workspace string, input Input) (st
 			id, workspace, n.Key, n.Hash[:], n.FromID, n.ToID, source.Currency, target.Currency,
 			n.Send, n.Receive, n.Fee, rate, n.Note, n.Date, sourceJournal, targetJournal)
 		return e
-	})
+	}(tx)
 	return id, err
 }
 

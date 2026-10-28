@@ -223,6 +223,37 @@ type RecurringSchedule struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type RemittanceOrder struct {
+	ID                   string             `json:"id"`
+	WorkspaceID          string             `json:"workspace_id"`
+	IdempotencyKey       string             `json:"idempotency_key"`
+	Fingerprint          []byte             `json:"fingerprint"`
+	SourceAccountID      string             `json:"source_account_id"`
+	DestinationAccountID string             `json:"destination_account_id"`
+	SourceCurrency       string             `json:"source_currency"`
+	DestinationCurrency  string             `json:"destination_currency"`
+	SendMinor            int64              `json:"send_minor"`
+	FeeMinor             int64              `json:"fee_minor"`
+	ReceiveMinor         int64              `json:"receive_minor"`
+	RateUnits            int64              `json:"rate_units"`
+	EffectiveRateUnits   int64              `json:"effective_rate_units"`
+	Note                 string             `json:"note"`
+	RequestedOn          pgtype.Date        `json:"requested_on"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+}
+
+type RemittanceResolution struct {
+	ID             string             `json:"id"`
+	WorkspaceID    string             `json:"workspace_id"`
+	OrderID        string             `json:"order_id"`
+	Action         string             `json:"action"`
+	TransferID     pgtype.Text        `json:"transfer_id"`
+	SettledOn      pgtype.Date        `json:"settled_on"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	Fingerprint    []byte             `json:"fingerprint"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type SavingsGoal struct {
 	ID               string             `json:"id"`
 	WorkspaceID      string             `json:"workspace_id"`
