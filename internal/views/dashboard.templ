@@ -1,0 +1,244 @@
+package views
+
+import (
+ "strconv"
+
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/contributions"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/dashboard"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/transactions"
+)
+
+templ FinancialDashboardPage(email, csrf string, snap dashboard.Snapshot){
+ @Document("Financial overview",FinancialDashboardContent(email,csrf,snap))
+}
+templ FinancialDashboardContent(email,csrf string,snap dashboard.Snapshot){
+ <div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+  <aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+   <a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold"><span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span> Budget Tracker</a>
+   <nav aria-label="Main navigation" class="space-y-2">
+    <a href="/dashboard" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Dashboard</a>
+    <a href="/accounts" class="block rounded-lg px-4 py-2 text-sm">Accounts & wallets</a>
+    <a href="/transactions" class="block rounded-lg px-4 py-2 text-sm">Transactions</a>
+    <a href="/transfers" class="block rounded-lg px-4 py-2 text-sm">Transfers & reconciliation</a>
+    <a href="/budgets" class="block rounded-lg px-4 py-2 text-sm">Monthly budgets</a>
+    <a href="/recurring" class="block rounded-lg px-4 py-2 text-sm">Bills & subscriptions</a>
+    <a href="/debts" class="block rounded-lg px-4 py-2 text-sm">Debts & installments</a>
+    <a href="/savings" class="block rounded-lg px-4 py-2 text-sm">Savings goals</a>
+    <a href="/remittances" class="block rounded-lg px-4 py-2 text-sm">Remittances</a>
+    <a href="/contributions" class="block rounded-lg px-4 py-2 text-sm">PH contributions</a>
+   </nav>
+  </aside>
+  <div class="min-w-0">
+   <header class="flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+    <details class="relative lg:hidden">
+     <summary aria-label="Open navigation" class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Menu</summary>
+     <nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+      <a class="block rounded-lg px-3 py-2 text-sm font-semibold" href="/dashboard">Dashboard</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/accounts">Accounts</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transactions">Transactions</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transfers">Transfers</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/budgets">Budgets</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/recurring">Recurring bills</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/debts">Debts</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/savings">Savings</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/remittances">Remittances</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/contributions">PH contributions</a>
+     </nav>
+    </details>
+    <p class="text-sm font-semibold lg:text-base">Personal workspace</p>
+    <div class="flex items-center gap-2">
+     <button type="button" data-theme-toggle aria-label="Toggle dark mode" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Theme</button>
+     <form method="post" action="/logout">
+      <input type="hidden" name="csrf_token" value={csrf}/>
+      <button type="submit" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Sign out</button>
+     </form>
+    </div>
+   </header>
+   <main id="main" class="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Financial overview · Group 16</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Your dashboard</h1>
+    <p class="mt-2 text-sm text-[var(--muted)]">Signed in as {email}. Live workspace balances, planning and obligations. AED and PHP are never combined or converted.</p>
+    <form method="get" action="/dashboard" hx-get="/dashboard/summary" hx-target="#dashboard-summary" hx-swap="outerHTML" class="mt-6 flex flex-wrap items-end gap-3">
+     <label class="block text-sm font-medium">Reporting month
+      <input class="field mt-1" type="month" name="month" value={snap.Month} min="2000-01" max="2100-12" required/>
+     </label>
+     <button type="submit" class="btn-primary">View month <span class="htmx-indicator">Loading…</span></button>
+     <a href="/dashboard" class="rounded-lg border border-[var(--border)] px-4 py-2 text-sm">Current month</a>
+    </form>
+    @FinancialDashboardSummary(snap)
+    <p class="mt-6 text-xs text-[var(--muted)]">Read-only financial overview. Monthly transaction figures use transaction dates; fees and loan interest use the journal posting month. Updated {snap.UpdatedOn}.</p>
+   </main>
+  </div>
+ </div>
+}
+templ FinancialDashboardSummary(snap dashboard.Snapshot){
+ <div id="dashboard-summary" class="mt-7 space-y-7" aria-live="polite">
+  for _,c:=range snap.Currencies{
+   <section aria-label={c.Code+" financial overview"} class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+     <h2 class="text-xl font-semibold">{c.Code} overview</h2>
+     <p class="text-xs text-[var(--muted)]">{snap.Month} · balances are current</p>
+    </div>
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+     @DashboardMoney(c.Code,"Assets",c.AssetsMinor,"Cash, banks, savings and wallets")
+     @DashboardMoney(c.Code,"Liabilities",c.LiabilitiesMinor,"Loans and credit accounts")
+     @DashboardMoney(c.Code,"Net worth",c.NetWorthMinor,"Assets minus liabilities")
+     @DashboardMoney(c.Code,"Net monthly activity",c.NetFlowMinor,"Income less net spending and other costs")
+    </div>
+    <div class="mt-5 grid gap-4 lg:grid-cols-2">
+     <div class="rounded-lg border border-[var(--border)] p-4">
+      <h3 class="font-semibold">Income & spending</h3>
+      <p class="mt-1 text-xs text-[var(--muted)]">Categorized transactions in {snap.Month}; refunds reduce spending.</p>
+      @DashboardAmountLine(c.Code,"Income",c.IncomeMinor)
+      @DashboardAmountLine(c.Code,"Expense transactions",c.ExpensesMinor)
+      @DashboardAmountLine(c.Code,"Refunds received",c.RefundsMinor)
+      @DashboardAmountLine(c.Code,"Net categorized spending",c.SpendingMinor)
+      @DashboardAmountLine(c.Code,"Other posted costs",c.OtherCostsMinor)
+      <p class="mt-3 text-xs text-[var(--muted)]">Other posted costs: transfer fees and loan interest, shown separately to avoid duplicate category expenses.</p>
+      <a class="mt-3 inline-block text-sm font-medium text-blue-600" href="/transactions">View transactions</a>
+     </div>
+     <div class="rounded-lg border border-[var(--border)] p-4">
+      <h3 class="font-semibold">Monthly budget</h3>
+      if !c.Budget.Configured{
+       <p class="mt-3 text-sm text-[var(--muted)]">No budget configured for {c.Code} in {snap.Month}.</p>
+      }else{
+       <p class="mt-2 text-xs text-[var(--muted)]">Rollover: {c.Budget.Policy}</p>
+       @DashboardAmountLine(c.Code,"Planned allocation",c.Budget.PlannedMinor)
+       @DashboardAmountLine(c.Code,"Carried forward",c.Budget.CarriedMinor)
+       @DashboardAmountLine(c.Code,"Budget actual",c.Budget.ActualMinor)
+       @DashboardAmountLine(c.Code,"Remaining",c.Budget.RemainingMinor)
+       if c.Budget.Overspent{
+        <p class="mt-2 text-sm font-medium text-rose-600">Over budget</p>
+       }
+       if len(c.Budget.Rows)>0{
+        <ul class="mt-3 divide-y divide-[var(--border)]">
+         for _,row:=range c.Budget.Rows{
+          <li class="flex flex-wrap justify-between gap-2 py-2 text-xs">
+           <span>{row.Name}</span>
+           <span class="tabular-nums">{c.Code} {accounts.FormatSignedMinor(row.ActualMinor)} spent / {accounts.FormatSignedMinor(row.RemainingMinor)} left</span>
+          </li>
+         }
+        </ul>
+       }
+      }
+      <a class="mt-3 inline-block text-sm font-medium text-blue-600" href="/budgets">Manage budgets</a>
+     </div>
+    </div>
+    if len(c.Accounts)>0{
+     <details class="mt-4 rounded-lg border border-[var(--border)] p-4">
+      <summary class="cursor-pointer text-sm font-semibold">Account balances ({strconv.Itoa(len(c.Accounts))})</summary>
+      <ul class="mt-2 divide-y divide-[var(--border)]">
+       for _,a:=range c.Accounts{
+        <li class="flex justify-between gap-3 py-2 text-sm">
+         <span>{a.Name} · {a.Kind}</span>
+         <span class="tabular-nums">{c.Code} {accounts.FormatSignedMinor(a.LedgerMinor)}</span>
+        </li>
+       }
+      </ul>
+     </details>
+    }
+   </section>
+  }
+  <div class="grid gap-5 lg:grid-cols-2">
+   <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <h2 class="text-lg font-semibold">Savings goals</h2>
+    if len(snap.Goals)==0{
+     <p class="mt-3 text-sm text-[var(--muted)]">No goals recorded.</p>
+    }else{
+     <ul class="mt-3 space-y-4">
+      for _,g:=range snap.Goals{
+       if !g.Archived{
+        <li>
+         <p class="flex flex-wrap justify-between gap-2 text-sm font-medium"><span>{g.Name} · {g.Currency}</span><span>{accounts.FormatSignedMinor(g.BalanceMinor)} / {accounts.FormatMinor(g.TargetMinor)}</span></p>
+         <progress class="mt-2 h-2 w-full accent-blue-600" value={strconv.Itoa(g.ProgressBps)} max="10000" aria-label={"Progress toward "+g.Name}></progress>
+         <p class="text-xs text-[var(--muted)]">{g.Status} · {strconv.Itoa(g.ProgressBps/100)}% funded</p>
+        </li>
+       }
+      }
+     </ul>
+    }
+    <a class="mt-4 inline-block text-sm font-medium text-blue-600" href="/savings">Savings goals</a>
+   </section>
+   <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <h2 class="text-lg font-semibold">Outstanding debt</h2>
+    if len(snap.Loans)==0{
+     <p class="mt-3 text-sm text-[var(--muted)]">No loan plans recorded.</p>
+    }else{
+     <ul class="mt-3 divide-y divide-[var(--border)]">
+      for _,p:=range snap.Loans{
+       <li class="flex flex-wrap justify-between gap-3 py-3 text-sm">
+        <span>{p.Name} · {p.Completed}/{p.Months} paid</span>
+        <span class="font-semibold tabular-nums">{p.Currency} {accounts.FormatSignedMinor(p.OutstandingMinor)} remaining</span>
+       </li>
+      }
+     </ul>
+    }
+    <a class="mt-4 inline-block text-sm font-medium text-blue-600" href="/debts">Debt and installment schedule</a>
+   </section>
+   <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <h2 class="text-lg font-semibold">Upcoming and overdue bills</h2>
+    if len(snap.Bills)==0{
+     <p class="mt-3 text-sm text-[var(--muted)]">No actionable bills in the next 30 days or recent overdue window.</p>
+    }else{
+     <ul class="mt-3 divide-y divide-[var(--border)]">
+      for _,b:=range snap.Bills{
+       <li class="flex flex-wrap justify-between gap-3 py-3 text-sm">
+        <span>{b.ScheduleName} · {b.DueOn} · {b.Status}</span>
+        <span class="font-semibold tabular-nums">{b.Currency} {accounts.FormatMinor(b.AmountMinor)}</span>
+       </li>
+      }
+     </ul>
+    }
+    <a class="mt-4 inline-block text-sm font-medium text-blue-600" href="/recurring">Manage recurring bills</a>
+   </section>
+   <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <h2 class="text-lg font-semibold">Due and overdue PH contributions</h2>
+    if len(snap.Contributions)==0{
+     <p class="mt-3 text-sm text-[var(--muted)]">No due or overdue PHP contribution periods in the recent tracking window.</p>
+    }else{
+     <ul class="mt-3 divide-y divide-[var(--border)]">
+      for _,c:=range snap.Contributions{
+       <li class="flex flex-wrap justify-between gap-3 py-3 text-sm">
+        <span>{contributions.SchemeLabel(c.Scheme)} · {c.Period} · {c.Status}</span>
+        <span class="font-semibold tabular-nums">PHP {accounts.FormatMinor(c.AmountMinor)}</span>
+       </li>
+      }
+     </ul>
+    }
+    <a class="mt-4 inline-block text-sm font-medium text-blue-600" href="/contributions">Manage PH contributions</a>
+   </section>
+  </div>
+  @FinancialDashboardActivity(snap.Recent)
+ </div>
+}
+templ DashboardMoney(currency,label string,amount int64,note string){
+ <article class="rounded-lg border border-[var(--border)] p-4">
+  <p class="text-xs font-medium text-[var(--muted)]">{label}</p>
+  <p class="mt-2 text-xl font-semibold tabular-nums">{currency} {accounts.FormatSignedMinor(amount)}</p>
+  <p class="mt-2 text-xs text-[var(--muted)]">{note}</p>
+ </article>
+}
+templ DashboardAmountLine(currency,label string,amount int64){
+ <div class="mt-3 flex flex-wrap justify-between gap-3 text-sm">
+  <span>{label}</span><span class="font-semibold tabular-nums">{currency} {accounts.FormatSignedMinor(amount)}</span>
+ </div>
+}
+templ FinancialDashboardActivity(recent []transactions.Record){
+ <section id="activity-panel" aria-live="polite" class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+  <h2 class="text-lg font-semibold">Recent activity</h2>
+  if len(recent)==0{
+   <p class="mt-3 text-sm text-[var(--muted)]">No transactions recorded yet.</p>
+  }else{
+   <ul class="mt-3 divide-y divide-[var(--border)]">
+    for _,r:=range recent{
+     <li class="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
+      <span>{r.OccurredOn.Format("2006-01-02")} · {r.Kind} · {r.AccountName} · {r.Categories}</span>
+      <span class="font-semibold tabular-nums">{r.Currency} {accounts.FormatMinor(r.TotalMinor)}</span>
+     </li>
+    }
+   </ul>
+  }
+  <a class="mt-4 inline-block text-sm font-medium text-blue-600" href="/transactions">Transaction history</a>
+ </section>
+}

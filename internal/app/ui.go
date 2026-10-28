@@ -7,11 +7,14 @@ import (
 	"mime"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/config"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/auth"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/budgets"
+	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/dashboard"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/views"
 )
 
@@ -125,18 +128,57 @@ func registerUI(r chi.Router, store *auth.Store, cfg config.Auth, logger *slog.L
 			http.Redirect(w, req, "/dashboard", http.StatusSeeOther)
 		})
 	}
-	r.Get("/dashboard", func(w http.ResponseWriter, req *http.Request) {
+	summaryStore := dashboard.NewStore(store.DB)
+	monthFromRequest := func(req *http.Request, now time.Time) (string, bool) {
+		month := req.URL.Query().Get("month")
+		if month == "" {
+			month = now.UTC().Format("2006-01")
+		}
+		if _, err := budgets.ValidateMonth(month); err != nil {
+			return "", false
+		}
+		return month, true
+	}
+	dashboardHandler := func(w http.ResponseWriter, req *http.Request, partial bool) {
 		actor, ok := currentActor(w, req, store, cfg)
 		if !ok {
 			return
 		}
-		renderPage(w, req, http.StatusOK, views.DashboardPage(actor.Email, actor.CSRFToken))
-	})
-	r.Get("/dashboard/activity", func(w http.ResponseWriter, req *http.Request) {
-		if _, ok := currentActor(w, req, store, cfg); !ok {
+		now := time.Now().UTC()
+		month, valid := monthFromRequest(req, now)
+		if !valid {
+			http.Error(w, "Invalid dashboard month", http.StatusBadRequest)
 			return
 		}
-		renderPage(w, req, http.StatusOK, views.ActivityPanel())
+		snapshot, err := summaryStore.Load(req.Context(), actor.WorkspaceID, month, now)
+		if err != nil {
+			logger.Error("dashboard_read_failed", "component", "financial_snapshot")
+			http.Error(w, "Financial dashboard temporarily unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if partial {
+			renderPage(w, req, http.StatusOK, views.FinancialDashboardSummary(snapshot))
+			return
+		}
+		renderPage(w, req, http.StatusOK, views.FinancialDashboardPage(actor.Email, actor.CSRFToken, snapshot))
+	}
+	r.Get("/dashboard", func(w http.ResponseWriter, req *http.Request) {
+		dashboardHandler(w, req, false)
+	})
+	r.Get("/dashboard/summary", func(w http.ResponseWriter, req *http.Request) {
+		dashboardHandler(w, req, true)
+	})
+	r.Get("/dashboard/activity", func(w http.ResponseWriter, req *http.Request) {
+		actor, ok := currentActor(w, req, store, cfg)
+		if !ok {
+			return
+		}
+		recent, err := dashboardRecent(req.Context(), store.DB, actor.WorkspaceID)
+		if err != nil {
+			http.Error(w, "Recent activity temporarily unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		renderPage(w, req, http.StatusOK, views.FinancialDashboardActivity(recent))
 	})
 	r.Post("/logout", func(w http.ResponseWriter, req *http.Request) {
 		if !auth.ValidOrigin(req, cfg) {
