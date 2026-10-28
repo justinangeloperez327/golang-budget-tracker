@@ -180,6 +180,7 @@ func registerUI(r chi.Router, store *auth.Store, cfg config.Auth, logger *slog.L
 	registerBudgetsUI(r, store, cfg, logger)
 	registerRecurringUI(r, store, cfg, logger)
 	registerDebtsUI(r, store, cfg, logger)
+	registerSavingsUI(r, store, cfg, logger)
 }
 
 func authMessage(mode string, err error) (string, int) {

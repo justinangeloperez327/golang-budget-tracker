@@ -1,0 +1,191 @@
+package views
+
+import (
+ "strconv"
+
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/savings"
+)
+func savingsPercent(bps int)string{
+ return strconv.Itoa(bps/100)+"."+strconv.FormatInt(int64(bps%100+100),10)[1:]+"%"
+}
+templ SavingsPage(goals []savings.Goal, movements []savings.Movement, wallets []accounts.Account, csrf,createKey,today,message string){
+ @Document("Savings goals",SavingsContent(goals,movements,wallets,csrf,createKey,today,message))
+}
+templ SavingsContent(goals []savings.Goal,movements []savings.Movement,wallets []accounts.Account,csrf,createKey,today,message string){
+ <div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+  <aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+   <a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold"><span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span> Budget Tracker</a>
+   <nav aria-label="Main navigation" class="space-y-2">
+    <a href="/dashboard" class="block rounded-lg px-4 py-3 text-sm">Dashboard</a>
+    <a href="/accounts" class="block rounded-lg px-4 py-3 text-sm">Accounts & wallets</a>
+    <a href="/transactions" class="block rounded-lg px-4 py-3 text-sm">Transactions</a>
+    <a href="/transfers" class="block rounded-lg px-4 py-3 text-sm">Transfers & reconciliation</a>
+    <a href="/budgets" class="block rounded-lg px-4 py-3 text-sm">Monthly budgets</a>
+    <a href="/recurring" class="block rounded-lg px-4 py-3 text-sm">Bills & subscriptions</a>
+    <a href="/debts" class="block rounded-lg px-4 py-3 text-sm">Debts & installments</a>
+    <a href="/savings" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Savings goals</a>
+   </nav>
+  </aside>
+  <div class="min-w-0">
+   <header class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+    <details class="relative lg:hidden">
+     <summary class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm" aria-label="Open navigation">Menu</summary>
+     <nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-64 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/dashboard">Dashboard</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/accounts">Accounts & wallets</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transactions">Transactions</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transfers">Transfers</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/budgets">Budgets</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/recurring">Bills</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/debts">Debts</a>
+      <a class="block rounded-lg px-3 py-2 text-sm font-semibold" href="/savings">Savings goals</a>
+     </nav>
+    </details>
+    <p class="font-semibold">Personal workspace</p>
+    <div class="flex items-center gap-2">
+     <button type="button" data-theme-toggle aria-label="Toggle dark mode" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Theme</button>
+     <form method="post" action="/logout"><input type="hidden" name="csrf_token" value={csrf}/><button type="submit" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Sign out</button></form>
+    </div>
+   </header>
+   <main id="main" class="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Savings · Group 13</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Savings goals</h1>
+    <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">Dedicate a savings account to one goal. Progress follows its real ledger balance, including existing savings, not a separate estimated total. Deposits and withdrawals transfer money between your accounts without creating income or expenses.</p>
+    @SavingsFeedback(message)
+    <div class="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+     <div class="space-y-6">
+      <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+       <h2 class="text-lg font-semibold">Your goals</h2>
+       if len(goals)==0{
+        <p class="mt-3 text-sm text-[var(--muted)]">No savings goals yet. Create a savings account under Accounts, then assign it a target.</p>
+       }else{
+        <div class="mt-4 space-y-5">
+         for _,g:=range goals{
+          <article class="rounded-lg border border-[var(--border)] p-4">
+           <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+             <h3 class="font-semibold">{g.Name}</h3>
+             <p class="mt-1 text-xs text-[var(--muted)]">{g.SavingsAccountName} · {g.Currency} · {g.Status}</p>
+             if g.TargetOn!="" {
+              <p class="mt-1 text-xs text-[var(--muted)]">Target date: {g.TargetOn}</p>
+             }
+            </div>
+            <div class="text-right">
+             <p class="font-semibold tabular-nums">{g.Currency} {accounts.FormatSignedMinor(g.BalanceMinor)}</p>
+             <p class="text-xs text-[var(--muted)]">of {accounts.FormatMinor(g.TargetMinor)} target</p>
+            </div>
+           </div>
+                   <progress class="mt-4 h-3 w-full accent-blue-600" value={strconv.Itoa(g.ProgressBps)} max="10000" aria-label={"Progress toward "+g.Name}></progress>
+           <p class="mt-2 text-xs text-[var(--muted)]">{savingsPercent(g.ProgressBps)} funded · {g.Currency} {accounts.FormatSignedMinor(g.RemainingMinor)} remaining</p>
+           if !g.Archived{
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+             @SavingsMoveForm(g,wallets,csrf,today,"contribution",g.ContributeKey)
+             @SavingsMoveForm(g,wallets,csrf,today,"withdrawal",g.WithdrawKey)
+            </div>
+            <form method="post" action={"/savings/"+g.ID+"/archive"} class="mt-3">
+             <input type="hidden" name="csrf_token" value={csrf}/>
+             <button type="submit" class="text-xs text-[var(--muted)] underline">Archive goal</button>
+            </form>
+           }
+          </article>
+         }
+        </div>
+       }
+      </section>
+      <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+       <h2 class="text-lg font-semibold">Contribution & withdrawal history</h2>
+       if len(movements)==0{
+        <p class="mt-3 text-sm text-[var(--muted)]">No savings transfers recorded yet.</p>
+       }else{
+        <ul class="mt-3 divide-y divide-[var(--border)]">
+         for _,m:=range movements{
+          <li class="flex flex-wrap items-start justify-between gap-3 py-3">
+           <div>
+            <p class="text-sm font-semibold">{m.GoalName} · {m.Direction}</p>
+            <p class="mt-1 text-xs text-[var(--muted)]">{m.OccurredOn} · {m.OtherAccountName}</p>
+           </div>
+           <p class="text-sm font-semibold tabular-nums">{m.Currency} {accounts.FormatMinor(m.AmountMinor)}</p>
+          </li>
+         }
+        </ul>
+       }
+      </section>
+     </div>
+     <section class="self-start rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 class="text-lg font-semibold">New savings goal</h2>
+      <form method="post" action="/savings" hx-post="/savings" hx-target="#savings-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="mt-5 space-y-4">
+       <input type="hidden" name="csrf_token" value={csrf}/>
+       <input type="hidden" name="request_key" value={createKey}/>
+       <label class="block text-sm font-medium">Goal name
+        <input name="name" required maxlength="100" class="field mt-1" placeholder="Emergency fund"/>
+       </label>
+       <label class="block text-sm font-medium">Dedicated savings account
+        <select class="field mt-1" name="savings_account_id" required>
+         <option value="">Select a savings account</option>
+         for _,a:=range wallets{
+          if a.Kind=="savings"&&!a.Archived{
+           <option value={a.ID}>{a.Name} · {a.Currency} · {accounts.FormatSignedMinor(a.LedgerMinor)}</option>
+          }
+         }
+        </select>
+       </label>
+       <label class="block text-sm font-medium">Target amount (account currency)
+        <input name="target_amount" class="field mt-1" required inputmode="decimal" placeholder="5000.00" pattern="[0-9]{1,12}(\.[0-9]{1,2})?"/>
+       </label>
+       <label class="block text-sm font-medium">Target date (optional)
+        <input name="target_on" class="field mt-1" type="date" min="2000-01-01" max="2100-12-31"/>
+       </label>
+       <button type="submit" class="btn-primary w-full">Create savings goal <span class="htmx-indicator">Saving…</span></button>
+      </form>
+     </section>
+    </div>
+   </main>
+  </div>
+ </div>
+}
+templ SavingsMoveForm(g savings.Goal,wallets []accounts.Account,csrf,today,direction,key string){
+ <form action="/savings/movements" method="post" hx-post="/savings/movements" hx-target="#savings-feedback" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" class="space-y-2 rounded-lg border border-[var(--border)] p-3">
+  <input type="hidden" name="csrf_token" value={csrf}/>
+  <input type="hidden" name="request_key" value={key}/>
+  <input type="hidden" name="goal_id" value={g.ID}/>
+  <input type="hidden" name="direction" value={direction}/>
+  <p class="text-sm font-semibold">
+   if direction=="contribution"{
+    <span>Contribute</span>
+   }else{
+    <span>Withdraw</span>
+   }
+  </p>
+  <label class="block text-xs font-medium">Counterparty account
+   <select name="other_account_id" class="field mt-1" required>
+    <option value="">Select account</option>
+    for _,a:=range wallets{
+     if a.ID!=g.SavingsAccountID&&a.Currency==g.Currency&&!a.Archived&&a.Kind!="loan"&&a.Kind!="credit"{
+      <option value={a.ID}>{a.Name} · {a.Currency}</option>
+     }
+    }
+   </select>
+  </label>
+  <label class="block text-xs font-medium">Amount · {g.Currency}
+   <input name="amount" class="field mt-1" required inputmode="decimal" placeholder="100.00" pattern="[0-9]{1,12}(\.[0-9]{1,2})?"/>
+  </label>
+  <label class="block text-xs font-medium">Date
+   <input name="occurred_on" type="date" value={today} class="field mt-1" required/>
+  </label>
+  <button type="submit" class="btn-primary w-full">
+   if direction=="contribution"{
+    <span>Save contribution</span>
+   }else{
+    <span>Save withdrawal</span>
+   }
+  </button>
+ </form>
+}
+templ SavingsFeedback(message string){
+ <div id="savings-feedback" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-rose-600">
+  if message!=""{
+   <p>{message}</p>
+  }
+ </div>
+}

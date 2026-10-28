@@ -223,6 +223,35 @@ type RecurringSchedule struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type SavingsGoal struct {
+	ID               string             `json:"id"`
+	WorkspaceID      string             `json:"workspace_id"`
+	Currency         string             `json:"currency"`
+	SavingsAccountID string             `json:"savings_account_id"`
+	Name             string             `json:"name"`
+	TargetMinor      int64              `json:"target_minor"`
+	TargetOn         pgtype.Date        `json:"target_on"`
+	IdempotencyKey   string             `json:"idempotency_key"`
+	Fingerprint      []byte             `json:"fingerprint"`
+	ArchivedAt       pgtype.Timestamptz `json:"archived_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type SavingsGoalMovement struct {
+	ID             string             `json:"id"`
+	WorkspaceID    string             `json:"workspace_id"`
+	GoalID         string             `json:"goal_id"`
+	Currency       string             `json:"currency"`
+	OtherAccountID string             `json:"other_account_id"`
+	Direction      string             `json:"direction"`
+	AmountMinor    int64              `json:"amount_minor"`
+	OccurredOn     pgtype.Date        `json:"occurred_on"`
+	JournalID      string             `json:"journal_id"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	Fingerprint    []byte             `json:"fingerprint"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Session struct {
 	TokenHash []byte             `json:"token_hash"`
 	UserID    string             `json:"user_id"`
