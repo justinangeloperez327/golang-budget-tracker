@@ -148,7 +148,7 @@ CREATE TRIGGER contribution_resolution_validate BEFORE INSERT ON contribution_re
 -- Avoid double-classification of an expense as both a recurring payment
 -- and a government contribution, regardless of which status is created first.
 -- +goose StatementBegin
-CREATE FUNCTION contribution_guard_recurring_expense() RETURNS trigger AS $
+CREATE FUNCTION contribution_guard_recurring_expense() RETURNS trigger AS $$
 BEGIN
  IF NEW.action='paid' AND NEW.expense_transaction_id IS NOT NULL
    AND EXISTS(SELECT 1 FROM contribution_resolutions r
@@ -158,7 +158,7 @@ BEGIN
  END IF;
  RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 -- +goose StatementEnd
 CREATE TRIGGER recurring_contribution_exclusive BEFORE INSERT ON recurring_occurrence_actions
  FOR EACH ROW EXECUTE FUNCTION contribution_guard_recurring_expense();
