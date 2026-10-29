@@ -4,6 +4,10 @@ A modular Go personal finance tracker: **Go 1.27.3**, Chi, templ + HTMX + Tailwi
 
 **Group 17 — Financial reports.** Generate monthly and annual AED/PHP reports with refund-aware categories, operating movements, journal-posted account histories, budget variance and secure CSV/PDF downloads. Server-rendered templ and HTMX share the same workspace-isolated reporting service.\n\n**Group 16 — Financial dashboard.** A unified read-only AED/PHP overview provides ledger-backed assets, liabilities and net worth, refund-aware income/spending, monthly budgets, savings goals, debt balances, actionable bills, PHP contributions and recent activity. Select a month with native GET or HTMX; never combine currencies or double-count transfer principal.\n\n**Group 15 — Philippine contributions.** Track user-entered PHP-only SSS, PhilHealth, regular Pag-IBIG and MP2 monthly obligations, optional due dates, payment/skipped history and overdue status. Link existing PHP expenses for regular contributions or PHP savings transfers for MP2 without posting duplicate ledger entries.
 
+## Production and manual release
+
+See [Group 20 production readiness, backup/restore and rollback runbook](docs/group-20-production.md). Production deployments require explicit operator approval. No GitHub Actions deployment or automatic migration is configured. Use the committed [production environment template](.env.production.example) without committing secrets.
+
 ## Run locally
 
 1. Install Go 1.27.3, Node 24, Docker/Compose. Clone the repo and copy `.env.example` to `.env`.

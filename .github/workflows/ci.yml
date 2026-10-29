@@ -155,5 +155,11 @@ jobs:
         run: |
           cp .env.example .env
           docker compose config --quiet
+      - name: Validate operator backup and restore scripts
+        shell: bash
+        run: |
+          bash -n scripts/backup-postgres.sh scripts/restore-postgres.sh
+          if (unset DATABASE_URL BACKUP_DIR; bash scripts/backup-postgres.sh >/dev/null 2>&1); then exit 1; fi
+          if (unset RESTORE_DATABASE_URL BACKUP_FILE CONFIRM_EMPTY_RESTORE; bash scripts/restore-postgres.sh >/dev/null 2>&1); then exit 1; fi
       - name: Build Docker image
         run: docker build --tag golang-budget-tracker:ci .
