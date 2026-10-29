@@ -254,6 +254,14 @@ type RecurringSchedule struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type ReminderDismissal struct {
+	WorkspaceID string             `json:"workspace_id"`
+	Kind        string             `json:"kind"`
+	ResourceID  string             `json:"resource_id"`
+	DueOn       pgtype.Date        `json:"due_on"`
+	DismissedAt pgtype.Timestamptz `json:"dismissed_at"`
+}
+
 type RemittanceOrder struct {
 	ID                   string             `json:"id"`
 	WorkspaceID          string             `json:"workspace_id"`
