@@ -101,6 +101,13 @@ func TestHomepageAndSecurityHeaders(t *testing.T) {
 	}
 }
 
+func TestCSPConstrainsFormAction(t *testing.T) {
+ var logs bytes.Buffer
+ rec := httptest.NewRecorder()
+ testHandler(&logs).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+ if !strings.Contains(rec.Header().Get("Content-Security-Policy"), "form-action 'self'") { t.Fatal("CSP missing form-action") }
+}
+
 func TestErrorsAreJSON(t *testing.T) {
 	for _, tc := range []struct {
 		method, path string

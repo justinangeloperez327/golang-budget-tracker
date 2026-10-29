@@ -12,3 +12,11 @@ test('theme works without unsafe inline scripts', async () => {
   assert.match(js, /data-theme-toggle/);
   assert.match(js, /localStorage/);
 });
+
+test('save recovery rejects session expiry and keeps original idempotency key', async () => {
+  const js = await readFile('web/scripts/app.js', 'utf8');
+  assert.match(js, /finalURL.pathname === '\/login'/);
+  assert.match(js, /new FormData\(form\)/);
+  assert.match(js, /Session expired/);
+  assert.match(js, /form.dataset.saving === 'true'/);
+});

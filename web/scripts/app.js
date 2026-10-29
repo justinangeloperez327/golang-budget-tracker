@@ -54,6 +54,12 @@
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body,
       });
+      const finalURL = new URL(response.url || form.action, window.location.href);
+      if (finalURL.origin !== window.location.origin ||
+          (response.redirected && (finalURL.pathname === '/login' || finalURL.pathname === '/register'))) {
+        feedback.textContent = 'Session expired. Verify your account history before retrying this save.';
+        return;
+      }
       if (!response.ok) {
         feedback.textContent = 'Save not confirmed (' + response.status +
           '). Review your entries and retry using the same request.';
@@ -62,7 +68,7 @@
       // A successful native POST uses 303 -> GET. Navigation only follows
       // an explicitly same-origin response. Never regenerate the request key.
       if (response.redirected) {
-        const destination = new URL(response.url);
+        const destination = finalURL;
         if (destination.origin === window.location.origin) {
           window.location.assign(destination.href);
           return;

@@ -78,7 +78,7 @@ func (s *Store) List(ctx context.Context, workspace string, now time.Time) ([]It
 	if err != nil {
 		return nil, err
 	}
-	dismissed, err := s.db.Query(ctx, `SELECT kind,resource_id,due_on::text FROM reminder_dismissals WHERE workspace_id=$1`, workspace)
+	dismissed, err := s.db.Query(ctx, `SELECT kind,resource_id,due_on::text FROM reminder_dismissals WHERE workspace_id=$1 AND due_on BETWEEN ($2::date - 30) AND ($2::date + 14)`, workspace, today)
 	if err != nil {
 		return nil, err
 	}
