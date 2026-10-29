@@ -1,0 +1,194 @@
+package views
+
+import (
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
+ "github.com/justinangeloperez327/golang-budget-tracker/internal/modules/reports"
+)
+
+templ ReportsPage(email,csrf string, r reports.Report) {
+ @Document("Financial reports",ReportsContent(email,csrf,r))
+}
+templ ReportsContent(email,csrf string,r reports.Report) {
+ <div class="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+  <aside class="hidden border-r border-[var(--border)] bg-[var(--panel)] px-5 py-7 lg:block">
+   <a href="/dashboard" class="mb-12 flex items-center gap-3 font-semibold"><span class="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">B</span> Budget Tracker</a>
+   <nav aria-label="Main navigation" class="space-y-2">
+    <a href="/dashboard" class="block rounded-lg px-4 py-3 text-sm">Dashboard</a>
+    <a href="/accounts" class="block rounded-lg px-4 py-3 text-sm">Accounts & wallets</a>
+    <a href="/transactions" class="block rounded-lg px-4 py-3 text-sm">Transactions</a>
+    <a href="/transfers" class="block rounded-lg px-4 py-3 text-sm">Transfers & reconciliation</a>
+    <a href="/budgets" class="block rounded-lg px-4 py-3 text-sm">Monthly budgets</a>
+    <a href="/recurring" class="block rounded-lg px-4 py-3 text-sm">Bills & subscriptions</a>
+    <a href="/debts" class="block rounded-lg px-4 py-3 text-sm">Debts & installments</a>
+    <a href="/savings" class="block rounded-lg px-4 py-3 text-sm">Savings goals</a>
+    <a href="/remittances" class="block rounded-lg px-4 py-3 text-sm">Remittances</a>
+    <a href="/contributions" class="block rounded-lg px-4 py-3 text-sm">PH contributions</a>
+    <a href="/reports" aria-current="page" class="block rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">Reports & exports</a>
+   </nav>
+  </aside>
+  <div class="min-w-0">
+   <header class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel)] px-5 py-4 sm:px-8">
+    <details class="relative lg:hidden">
+     <summary class="cursor-pointer rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Menu</summary>
+     <nav aria-label="Mobile navigation" class="absolute z-10 mt-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/dashboard">Dashboard</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/accounts">Accounts</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transactions">Transactions</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/transfers">Transfers</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/budgets">Budgets</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/recurring">Bills</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/debts">Debts</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/savings">Savings</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/remittances">Remittances</a>
+      <a class="block rounded-lg px-3 py-2 text-sm" href="/contributions">PH contributions</a>
+      <a class="block rounded-lg px-3 py-2 text-sm font-semibold" href="/reports">Reports</a>
+     </nav>
+    </details>
+    <p class="font-semibold">Personal workspace</p>
+    <div class="flex items-center gap-2">
+     <button type="button" data-theme-toggle aria-label="Toggle dark mode" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Theme</button>
+     <form method="post" action="/logout">
+      <input type="hidden" name="csrf_token" value={csrf}/>
+      <button type="submit" class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">Sign out</button>
+     </form>
+    </div>
+   </header>
+   <main id="main" class="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Financial reporting · Group 17</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Reports & exports</h1>
+    <p class="mt-2 max-w-3xl text-sm text-[var(--muted)]">Monthly or annual reports built from immutable transactions and ledger postings. AED and PHP remain separate. Dates and account movements use the clearly labeled accounting basis.</p>
+    <form action="/reports" method="get" hx-get="/reports/summary" hx-target="#report-summary" hx-swap="outerHTML" class="mt-5 flex flex-wrap items-end gap-3">
+     <label class="block text-sm font-medium">Period (YYYY-MM or YYYY)
+      <input class="field mt-1" name="period" value={r.Query.Period} required maxlength="7" placeholder="2026-10" pattern="(20[0-9]{2}|2100)(-(0[1-9]|1[0-2]))?"/>
+     </label>
+     <label class="block text-sm font-medium">Currency
+      <select class="field mt-1" name="currency">
+       <option value="AED" selected?={r.Query.Currency=="AED"}>AED · UAE dirham</option>
+       <option value="PHP" selected?={r.Query.Currency=="PHP"}>PHP · Philippine peso</option>
+      </select>
+     </label>
+     <button type="submit" class="btn-primary">Generate report <span class="htmx-indicator">Loading…</span></button>
+    </form>
+    @ReportsSummary(r)
+    <p class="mt-6 max-w-4xl text-xs leading-5 text-[var(--muted)]">Financial data is private to your workspace. Monthly income, expense, refund and category totals use the transaction's occurred date. Historical account balances, transfers and fees use journal posting dates, not a reconstructed bank statement. Internal transfers and loan principal are not counted as income or categorized spending.</p>
+   </main>
+  </div>
+ </div>
+}
+templ ReportsSummary(r reports.Report){
+ <div id="report-summary" class="mt-7 space-y-6" aria-live="polite">
+  <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+   <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+     <h2 class="text-xl font-semibold">{r.Query.Currency} · {r.Period.Label}</h2>
+     <p class="mt-1 text-xs text-[var(--muted)]">Journal as-of range {r.Period.Start} through the day before {r.Period.End}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+     <a class="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium" href={"/reports/export.csv?period="+r.Query.Period+"&currency="+r.Query.Currency}>Download CSV</a>
+     <a class="btn-primary" href={"/reports/export.pdf?period="+r.Query.Period+"&currency="+r.Query.Currency}>Download PDF</a>
+    </div>
+   </div>
+   <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    @ReportMetric(r.Query.Currency,"Income",r.IncomeMinor)
+    @ReportMetric(r.Query.Currency,"Net categorized spending",r.NetSpendingMinor)
+    @ReportMetric(r.Query.Currency,"Other posted costs",r.FeesMinor+r.InterestMinor)
+    @ReportMetric(r.Query.Currency,"Operating net",r.OperatingNetMinor)
+   </div>
+   <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    @ReportMetric(r.Query.Currency,"Opening net worth",r.OpeningNetWorthMinor)
+    @ReportMetric(r.Query.Currency,"Closing net worth",r.ClosingNetWorthMinor)
+    @ReportMetric(r.Query.Currency,"Net worth change",r.ClosingNetWorthMinor-r.OpeningNetWorthMinor)
+   </div>
+   <p class="mt-3 text-xs text-[var(--muted)]">Net worth is reconstructed from posted journals as of each boundary. It is not a backdated bank statement or an FX-converted consolidated total.</p>
+  </section>
+  <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+   <h2 class="text-lg font-semibold">Income & expense by category</h2>
+   if len(r.Categories)==0{
+    <p class="mt-3 text-sm text-[var(--muted)]">No categorized transactions in this period.</p>
+   }else{
+    <div class="mt-3 overflow-x-auto">
+     <table class="w-full text-left text-sm">
+      <thead><tr class="border-b border-[var(--border)] text-[var(--muted)]"><th class="py-2">Category</th><th class="py-2">Kind</th><th class="py-2 text-right">Gross</th><th class="py-2 text-right">Refunds</th><th class="py-2 text-right">Net</th></tr></thead>
+      <tbody>
+       for _,c:=range r.Categories{
+        <tr class="border-b border-[var(--border)]"><td class="py-2">{c.Name}</td><td>{c.Kind}</td>
+         <td class="text-right tabular-nums">{accounts.FormatSignedMinor(c.GrossMinor)}</td>
+         <td class="text-right tabular-nums">{accounts.FormatSignedMinor(c.RefundMinor)}</td>
+         <td class="text-right tabular-nums">{accounts.FormatSignedMinor(c.NetMinor)}</td>
+        </tr>
+       }
+      </tbody>
+     </table>
+    </div>
+   }
+  </section>
+  <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+   <h2 class="text-lg font-semibold">Month-to-month comparison</h2>
+   <p class="mt-1 text-xs text-[var(--muted)]">Refunds reduce spending. Fees and interest are counted by posting month.</p>
+   <div class="mt-3 overflow-x-auto">
+    <table class="w-full text-left text-sm">
+     <thead><tr class="border-b border-[var(--border)] text-[var(--muted)]"><th class="py-2">Month</th><th class="text-right">Income</th><th class="text-right">Expense</th><th class="text-right">Refund</th><th class="text-right">Fees + interest</th><th class="text-right">Operating net</th></tr></thead>
+     <tbody>
+      for _,m:=range r.Monthly{
+       <tr class="border-b border-[var(--border)]">
+        <td class="py-2">{m.Period}</td><td class="text-right tabular-nums">{accounts.FormatSignedMinor(m.IncomeMinor)}</td>
+        <td class="text-right tabular-nums">{accounts.FormatSignedMinor(m.ExpensesMinor)}</td>
+        <td class="text-right tabular-nums">{accounts.FormatSignedMinor(m.RefundMinor)}</td>
+        <td class="text-right tabular-nums">{accounts.FormatSignedMinor(m.FeesMinor+m.InterestMinor)}</td>
+        <td class="text-right tabular-nums">{accounts.FormatSignedMinor(m.NetMinor)}</td>
+       </tr>
+      }
+     </tbody>
+    </table>
+   </div>
+  </section>
+  <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+   <h2 class="text-lg font-semibold">Account movements & historical net worth</h2>
+   <p class="mt-1 text-xs text-[var(--muted)]">Includes openings, transfers, repayments and reconciliations when their journals were posted in this period.</p>
+   if len(r.Accounts)==0{
+    <p class="mt-3 text-sm text-[var(--muted)]">No accounts in this currency.</p>
+   }else{
+    <div class="mt-3 overflow-x-auto">
+     <table class="w-full text-left text-sm">
+      <thead><tr class="border-b border-[var(--border)] text-[var(--muted)]"><th class="py-2">Account</th><th class="text-right">Opening</th><th class="text-right">Debits</th><th class="text-right">Credits</th><th class="text-right">Closing</th></tr></thead>
+      <tbody>
+       for _,a:=range r.Accounts{
+        <tr class="border-b border-[var(--border)]">
+         <td class="py-2">{a.Name} · {a.Kind}</td>
+         <td class="text-right tabular-nums">{accounts.FormatSignedMinor(a.OpeningMinor)}</td>
+         <td class="text-right tabular-nums">{accounts.FormatSignedMinor(a.DebitsMinor)}</td>
+         <td class="text-right tabular-nums">{accounts.FormatSignedMinor(a.CreditsMinor)}</td>
+         <td class="text-right tabular-nums">{accounts.FormatSignedMinor(a.ClosingMinor)}</td>
+        </tr>
+       }
+      </tbody>
+     </table>
+    </div>
+   }
+  </section>
+  <section class="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5">
+   <h2 class="text-lg font-semibold">Budget vs. actual</h2>
+   if !r.BudgetConfigured{
+    <p class="mt-3 text-sm text-[var(--muted)]">No budget configured for this reporting period.</p>
+   }else{
+    <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+     @ReportMetric(r.Query.Currency,"Planned",r.BudgetPlannedMinor)
+     @ReportMetric(r.Query.Currency,"Carried",r.BudgetCarriedMinor)
+     @ReportMetric(r.Query.Currency,"Actual",r.BudgetActualMinor)
+     @ReportMetric(r.Query.Currency,"Remaining",r.BudgetRemainingMinor)
+    </div>
+    <ul class="mt-3 divide-y divide-[var(--border)]">
+     for _,b:=range r.Budgets{
+      <li class="flex flex-wrap justify-between gap-2 py-2 text-sm"><span>{b.Name}</span><span class="tabular-nums">{accounts.FormatSignedMinor(b.ActualMinor)} actual / {accounts.FormatSignedMinor(b.RemainingMinor)} remaining</span></li>
+     }
+    </ul>
+   }
+  </section>
+ </div>
+}
+templ ReportMetric(currency,name string,value int64){
+ <article class="rounded-lg border border-[var(--border)] p-4">
+  <p class="text-xs text-[var(--muted)]">{name}</p>
+  <p class="mt-2 text-xl font-semibold tabular-nums">{currency} {accounts.FormatSignedMinor(value)}</p>
+ </article>
+}

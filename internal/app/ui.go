@@ -225,6 +225,7 @@ func registerUI(r chi.Router, store *auth.Store, cfg config.Auth, logger *slog.L
 	registerSavingsUI(r, store, cfg, logger)
 	registerRemittancesUI(r, store, cfg, logger)
 	registerContributionsUI(r, store, cfg, logger)
+	registerReportsUI(r, store, cfg, logger)
 }
 
 func authMessage(mode string, err error) (string, int) {
