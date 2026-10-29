@@ -118,8 +118,9 @@ jobs:
         shell: bash
         run: |
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" up
-          # Check rollback on an EMPTY finance database, before posting any money.
-          "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" down
+          # Roll back through the readiness marker on an EMPTY finance database.
+          # Group 18 adds migration 13 without replacing the Group 15 readiness marker.
+          "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" down-to 11
           TEST_MIGRATIONS_DOWN=1 go test -tags=integration -count=1 -run TestReadinessBeforeMigrations ./tests/integration
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" up
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$TEST_DATABASE_URL" status
