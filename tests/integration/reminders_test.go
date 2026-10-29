@@ -8,10 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/accounts"
-	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/recurring"
 	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/reminders"
-	"github.com/justinangeloperez327/golang-budget-tracker/internal/modules/transactions"
 )
 
 func TestReminderIsolationAndIdempotentDismissal(t *testing.T) {
@@ -72,6 +69,4 @@ func TestReminderIsolationAndIdempotentDismissal(t *testing.T) {
 	if count != 0 {
 		t.Fatal("reminders wrote a financial transaction")
 	}
-	_ = accounts.IsValidKey
-	_ = transactions.Filter{}
 }
